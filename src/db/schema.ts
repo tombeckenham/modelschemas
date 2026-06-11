@@ -484,3 +484,87 @@ export const changesRelations = relations(changes, ({ one }) => ({
     references: [providers.id],
   }),
 }))
+
+// ---------------------------------------------------------------------------
+// Cache + delivery tables (PLAN.md task 1.2).
+// ---------------------------------------------------------------------------
+
+export const cacheMeta = sqliteTable('cache_meta', {
+  key: text('key').primaryKey(),
+  fetchedAt: integer('fetched_at').notNull(),
+  staleTime: integer('stale_time').notNull(),
+  lastError: text('last_error'),
+  refreshing: integer('refreshing', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+})
+
+export const subscriptions = sqliteTable(
+  'subscriptions',
+  {
+    id: text('id').primaryKey(),
+    agentId: text('agent_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    url: text('url').notNull(),
+    secret: text('secret').notNull(),
+    events: text('events', { mode: 'json' }).notNull(),
+    providerFilter: text('provider_filter').references(() => providers.id, {
+      onDelete: 'cascade',
+    }),
+    active: integer('active', { mode: 'boolean' }).notNull().default(true),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => [index('subscriptions_agentId_idx').on(table.agentId)],
+)
+
+export const webhookDeliveries = sqliteTable(
+  'webhook_deliveries',
+  {
+    id: text('id').primaryKey(),
+    subscriptionId: text('subscription_id')
+      .notNull()
+      .references(() => subscriptions.id, { onDelete: 'cascade' }),
+    changeId: text('change_id')
+      .notNull()
+      .references(() => changes.id, { onDelete: 'cascade' }),
+    attempt: integer('attempt').notNull().default(0),
+    nextAttemptAt: integer('next_attempt_at').notNull(),
+    status: text('status', { enum: ['pending', 'ok', 'failed'] })
+      .notNull()
+      .default('pending'),
+    lastResponseCode: integer('last_response_code'),
+  },
+  (table) => [
+    index('webhook_deliveries_status_nextAttemptAt_idx').on(
+      table.status,
+      table.nextAttemptAt,
+    ),
+    index('webhook_deliveries_subscriptionId_idx').on(table.subscriptionId),
+  ],
+)
+
+export const subscriptionsRelations = relations(
+  subscriptions,
+  ({ one, many }) => ({
+    agent: one(user, {
+      fields: [subscriptions.agentId],
+      references: [user.id],
+    }),
+    deliveries: many(webhookDeliveries),
+  }),
+)
+
+export const webhookDeliveriesRelations = relations(
+  webhookDeliveries,
+  ({ one }) => ({
+    subscription: one(subscriptions, {
+      fields: [webhookDeliveries.subscriptionId],
+      references: [subscriptions.id],
+    }),
+    change: one(changes, {
+      fields: [webhookDeliveries.changeId],
+      references: [changes.id],
+    }),
+  }),
+)

@@ -190,13 +190,16 @@ Rules:
   - Note: migration drizzle/0001_sweet_zeigeist.sql; `activities`/`changeTypes` exported
     as const arrays (drizzle text enums are type-level only). Worker tests cover insert +
     relational query across all five tables and FK enforcement.
-- [ ] **1.2 Cache + delivery tables:**
+- [x] **1.2 Cache + delivery tables:**
   - `cache_meta` — key, fetchedAt, staleTime, lastError, refreshing flag.
   - `subscriptions` — id, agentId (auth user), url, secret, events (json array),
     providerFilter nullable, active, createdAt.
   - `webhook_deliveries` — id, subscriptionId, changeId, attempt, nextAttemptAt,
     status (`pending`|`ok`|`failed`), lastResponseCode.
     _Accepts:_ migration applies; FK relations defined.
+  - Note: migration drizzle/0002_violet_lionheart.sql; deliveries indexed on
+    (status, nextAttemptAt) for the cron drain. Worker tests cover cache_meta
+    round-trip, subscription→user/delivery→change relations, and FK enforcement.
 - [ ] **1.3 Seed script.** `scripts/seed.ts` inserting the 7 providers with their spec
       source config (port the constants/URLs from PR #622's `scripts/providers/*`:
       Anthropic `.stats.yml` resolution, FAL `expand=openapi-3.0` note, Gemini discovery
