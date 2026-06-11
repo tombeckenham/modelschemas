@@ -558,7 +558,7 @@ the agent-auth capability list (5.1). Spec drift breaks a CI check, not a user.
 Requested by Tom 2026-06-11: a human-facing surface alongside the agent one.
 The production domain is **modelschemas.com**.
 
-- [ ] **9.1 Custom domain.** Attach `modelschemas.com` to the deployed worker
+- [x] ~BLOCKED~ **9.1 Custom domain.** Attach `modelschemas.com` to the deployed worker
       (Cloudflare custom domain on this account's zone; `routes` in
       `wrangler.jsonc` with `custom_domain: true`), set the
       `BETTER_AUTH_URL` var to `https://modelschemas.com` (agent JWT
@@ -566,6 +566,12 @@ The production domain is **modelschemas.com**.
       still serves (or document the canonical-host choice). _Accepts:_
       `https://modelschemas.com/v1/status` live. If the zone is not in the
       OpenStory account, mark BLOCKED with what Tom needs to do.
+  - BLOCKED 2026-06-11: attaching the custom domain failed (PUT …/domains/records)
+    — the modelschemas.com zone is not in the OpenStory Cloudflare account. Tom:
+    add modelschemas.com as a zone in that account (Cloudflare dashboard → Add site,
+    then point the registrar nameservers at Cloudflare), then say the word and I'll
+    re-add the route, flip BETTER_AUTH_URL, and redeploy. Route reverted so deploys
+    stay green; service remains on modelschemas.openstory.workers.dev.
 - [ ] **9.2 Email OTP sign-in for humans.** Add better-auth's `emailOTP`
       plugin to `createAuth` with a mail abstraction in
       `src/server/email.ts`: when `RESEND_API_KEY` is set, send via the
