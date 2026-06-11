@@ -9,14 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OpenapiDotjsonRouteImport } from './routes/openapi[.]json'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as V1IndexRouteImport } from './routes/v1/index'
 import { Route as V1StatusRouteImport } from './routes/v1/status'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as V1AdminSyncProviderRouteImport } from './routes/v1/admin/sync.$provider'
 
+const OpenapiDotjsonRoute = OpenapiDotjsonRouteImport.update({
+  id: '/openapi.json',
+  path: '/openapi.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V1IndexRoute = V1IndexRouteImport.update({
+  id: '/v1/',
+  path: '/v1/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const V1StatusRoute = V1StatusRouteImport.update({
@@ -37,50 +55,100 @@ const V1AdminSyncProviderRoute = V1AdminSyncProviderRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/llms.txt': typeof LlmsDottxtRoute
+  '/openapi.json': typeof OpenapiDotjsonRoute
   '/v1/status': typeof V1StatusRoute
+  '/v1/': typeof V1IndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/v1/admin/sync/$provider': typeof V1AdminSyncProviderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/llms.txt': typeof LlmsDottxtRoute
+  '/openapi.json': typeof OpenapiDotjsonRoute
   '/v1/status': typeof V1StatusRoute
+  '/v1': typeof V1IndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/v1/admin/sync/$provider': typeof V1AdminSyncProviderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/llms.txt': typeof LlmsDottxtRoute
+  '/openapi.json': typeof OpenapiDotjsonRoute
   '/v1/status': typeof V1StatusRoute
+  '/v1/': typeof V1IndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/v1/admin/sync/$provider': typeof V1AdminSyncProviderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/v1/status' | '/api/auth/$' | '/v1/admin/sync/$provider'
+  fullPaths:
+    | '/'
+    | '/llms.txt'
+    | '/openapi.json'
+    | '/v1/status'
+    | '/v1/'
+    | '/api/auth/$'
+    | '/v1/admin/sync/$provider'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/v1/status' | '/api/auth/$' | '/v1/admin/sync/$provider'
+  to:
+    | '/'
+    | '/llms.txt'
+    | '/openapi.json'
+    | '/v1/status'
+    | '/v1'
+    | '/api/auth/$'
+    | '/v1/admin/sync/$provider'
   id:
     | '__root__'
     | '/'
+    | '/llms.txt'
+    | '/openapi.json'
     | '/v1/status'
+    | '/v1/'
     | '/api/auth/$'
     | '/v1/admin/sync/$provider'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LlmsDottxtRoute: typeof LlmsDottxtRoute
+  OpenapiDotjsonRoute: typeof OpenapiDotjsonRoute
   V1StatusRoute: typeof V1StatusRoute
+  V1IndexRoute: typeof V1IndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   V1AdminSyncProviderRoute: typeof V1AdminSyncProviderRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/openapi.json': {
+      id: '/openapi.json'
+      path: '/openapi.json'
+      fullPath: '/openapi.json'
+      preLoaderRoute: typeof OpenapiDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/': {
+      id: '/v1/'
+      path: '/v1'
+      fullPath: '/v1/'
+      preLoaderRoute: typeof V1IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v1/status': {
@@ -109,7 +177,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LlmsDottxtRoute: LlmsDottxtRoute,
+  OpenapiDotjsonRoute: OpenapiDotjsonRoute,
   V1StatusRoute: V1StatusRoute,
+  V1IndexRoute: V1IndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   V1AdminSyncProviderRoute: V1AdminSyncProviderRoute,
 }

@@ -304,10 +304,16 @@ Rules:
 All under `/v1`, JSON-only, TanStack Start server-route handlers. Design for an LLM
 consumer: every list response includes `_links` to drill deeper, errors carry remedies.
 
-- [ ] **4.1 Discovery surface.** `GET /v1` (service description + endpoint index),
+- [x] **4.1 Discovery surface.** `GET /v1` (service description + endpoint index),
       `GET /llms.txt` (markdown usage guide for agents), `GET /openapi.json` (the
       service's own OpenAPI doc, hand-maintained in `src/server/openapi.ts`). _Accepts:_
       all three render; openapi.json validates against OpenAPI 3.1 meta-schema in a test.
+  - Note: meta-schema (2022-10-07) vendored in src/server/fixtures, validated with
+    @cfworker/json-schema (added now, reused by 4.4); a second test enforces unique
+    camelCase operationIds (the 5.1/7.4 contract). llms.txt content lives in
+    src/server/llms-txt.ts for reuse by /docs (7.3) and the skill (7.6). Dotted
+    filenames use `[.]` escaping (`openapi[.]json.ts`); the router plugin rewrites
+    the createFileRoute id itself on dev-server regeneration.
 - [ ] **4.2 Catalog endpoints.**
   - `GET /v1/providers` — list with sync status.
   - `GET /v1/providers/{provider}/models` — models for one provider.
