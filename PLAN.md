@@ -647,7 +647,7 @@ deploy. Re-verify on production at the end.
   - Note: a scaffold public/robots.txt static asset was shadowing the route
     (assets win over worker routes) — removed. lastmod derives from the newest
     change row; worker tests cover both surfaces.
-- [ ] **10.2 Link headers (RFC 8288).** Add `Link` response headers on HTML
+- [x] **10.2 Link headers (RFC 8288).** Add `Link` response headers on HTML
       pages (via the worker fetch wrapper): `</.well-known/api-catalog>;
 rel="api-catalog"`, `</openapi.json>; rel="service-desc"`, `</docs>;
 rel="service-doc"`, `</llms.txt>; rel="describedby"`. _Accepts:_ curl -I

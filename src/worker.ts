@@ -6,6 +6,7 @@ import { isAdminRequest } from '#/server/admin.ts'
 import { getAuth } from '#/server/auth.ts'
 import type { KvEnv } from '#/server/kv.ts'
 import type { ProviderSecrets } from '#/server/providers/types.ts'
+import { withDiscoveryLinks } from '#/server/discovery-links.ts'
 import { enforceRateLimit } from '#/server/rate-limit.ts'
 import { pollAllProviders } from '#/server/ingest/poll-models.ts'
 import { syncAllProviders } from '#/server/ingest/sync.ts'
@@ -47,9 +48,10 @@ export default {
       if (limited) return limited
     }
     // TanStack Start's handler takes (request, opts?) — bindings flow in via
-    // the cloudflare:workers env module, not handler arguments.
+    // the cloudflare:workers env module, not handler arguments. HTML pages
+    // get RFC 8288 discovery Link headers (task 10.2).
     void ctx
-    return serverEntry.fetch(request)
+    return withDiscoveryLinks(await serverEntry.fetch(request))
   },
 
   scheduled(
