@@ -352,7 +352,10 @@
             "description": "Defaults to input.",
             "schema": {
               "type": "string",
-              "enum": ["input", "output"]
+              "enum": [
+                "input",
+                "output"
+              ]
             }
           },
           {
@@ -585,11 +588,16 @@
     "schemas": {
       "Error": {
         "type": "object",
-        "required": ["error"],
+        "required": [
+          "error"
+        ],
         "properties": {
           "error": {
             "type": "object",
-            "required": ["code", "message"],
+            "required": [
+              "code",
+              "message"
+            ],
             "properties": {
               "code": {
                 "type": "string"
@@ -603,7 +611,11 @@
       },
       "ServiceStatus": {
         "type": "object",
-        "required": ["service", "time", "providers"],
+        "required": [
+          "service",
+          "time",
+          "providers"
+        ],
         "properties": {
           "service": {
             "type": "string",
@@ -625,13 +637,23 @@
                 },
                 "status": {
                   "type": "string",
-                  "enum": ["active", "degraded", "disabled"]
+                  "enum": [
+                    "active",
+                    "degraded",
+                    "disabled"
+                  ]
                 },
                 "lastPolledAt": {
-                  "type": ["integer", "null"]
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
                 },
                 "lastSyncedAt": {
-                  "type": ["integer", "null"]
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
                 },
                 "counts": {
                   "type": "object",
@@ -654,7 +676,11 @@
       },
       "ValidateRequest": {
         "type": "object",
-        "required": ["provider", "endpointId", "payload"],
+        "required": [
+          "provider",
+          "endpointId",
+          "payload"
+        ],
         "properties": {
           "provider": {
             "type": "string"
@@ -664,14 +690,20 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["input", "output"]
+            "enum": [
+              "input",
+              "output"
+            ]
           },
           "payload": {}
         }
       },
       "ValidateResult": {
         "type": "object",
-        "required": ["valid", "errors"],
+        "required": [
+          "valid",
+          "errors"
+        ],
         "properties": {
           "valid": {
             "type": "boolean"

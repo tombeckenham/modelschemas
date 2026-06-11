@@ -1,3 +1,4 @@
 package-lock.json
 pnpm-lock.yaml
-yarn.lock
+yarn.lock# emitted artifact (bun run openapi:emit) — byte-stable JSON.stringify output
+openapi.json
