@@ -1,0 +1,18 @@
+{
+  "name": "modelschemas",
+  "version": "0.1.0",
+  "description": "CLI for the modelschemas live AI model schema service.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "bin": {
+    "modelschemas": "./src/index.ts"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@modelschemas/client": "workspace:*",
+    "jose": "^6.2.3"
+  },
+  "license": "MIT"
+}

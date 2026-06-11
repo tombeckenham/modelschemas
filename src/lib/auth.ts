@@ -50,7 +50,6 @@ function buildAgentAuthConfig(options?: CreateAuthOptions) {
       // Reads + validate are public data: grant without human approval so
       // the autonomous (no-human) path is friction-free.
       approvalStrength: 'none',
-      defaultHostCapabilities: ['GET', 'POST'],
     },
   )
 
@@ -87,6 +86,10 @@ function buildAgentAuthConfig(options?: CreateAuthOptions) {
     // + approvals stay enabled but no current capability requires them.
     modes: ['autonomous', 'delegated'] as Array<'autonomous' | 'delegated'>,
     capabilities,
+    // Hosts that register without an explicit capability list get the full
+    // public set. Must be the FILTERED list — deriving from the spec would
+    // include excluded admin ops (syncProvider) and 400 every registration.
+    defaultHostCapabilities: capabilities.map((capability) => capability.name),
     // Open agent signup: unknown hosts may self-register with inline keys.
     allowDynamicHostRegistration: true,
     // Autonomous agents have no human owner; execute under a virtual

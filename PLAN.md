@@ -477,7 +477,7 @@ the agent-auth capability list (5.1). Spec drift breaks a CI check, not a user.
     hand-written entry adds createModelschemasClient with bearer auth. `check:client`
     wired into CI. Smoke: bun scripts/client-smoke.ts listed 7 providers + fetched the
     Anthropic schema typed.
-- [ ] **7.5 CLI (`packages/cli`, bin: `modelschemas`).** Thin command layer over the
+- [x] **7.5 CLI (`packages/cli`, bin: `modelschemas`).** Thin command layer over the
       generated client. `modelschemas login` runs agent-auth registration (autonomous
       mode by default; `--delegated` walks the device-authorization approval flow and
       polls until granted; `--api-key` falls back to `/v1/agents/register-key`), storing
@@ -487,6 +487,12 @@ the agent-auth capability list (5.1). Spec drift breaks a CI check, not a user.
       (default when not a TTY) so the CLI is itself agent-friendly. _Accepts:_
       `bun packages/cli login` against local dev creates an agent; `models list` then
       succeeds authenticated; `validate` returns non-zero exit on invalid payload.
+  - Note: all commands live-verified (login → active autonomous agent, 0600 creds,
+    MODELSCHEMAS_CONFIG_DIR override for tests; whoami; models list/get; schema get
+    auto-resolves activity from the provider index; validate exits 2 on invalid;
+    changes; subscribe). validate takes `<provider/endpointId>`. Surfaced + fixed a
+    5.1 bug: defaultHostCapabilities derived from the raw spec included the excluded
+    syncProvider op, 400-ing capability-less registrations — now the filtered list.
 - [ ] **7.6 Distributable agent skill.** `skill/modelschemas/SKILL.md` (frontmatter:
       `name`, `description` with trigger phrases like "model schema", "what models
       support X", "validate this provider payload") teaching the full workflow:
