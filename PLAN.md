@@ -111,9 +111,10 @@ Rules:
       gate the loop protocol's
       phase-boundary step checks against. _Accepts:_ workflow file is valid (passes
       `actionlint` or a dry-run push) and the run is green on the commit that adds it.
-  - Note: actionlint not installable and pushing to main not authorized in this session;
-    validated via YAML parse + all five commands green locally. CI-run-green confirmation
-    is pending the next authorized push.
+  - Note: actionlint not installable in the sandbox; validated via YAML parse + all five
+    commands green locally, then confirmed green on GitHub Actions (run 27326004002 on
+    commit 320c2b0, the phase 0 closing commit). checkout bumped v4→v5 (node20
+    deprecation). Standing permission from Tom to push origin/main each iteration.
 - [x] **0.1 Move the database to D1.** Add a `d1_databases` binding (`DB`) to
       `wrangler.jsonc`; switch `src/db/index.ts` to `drizzle-orm/d1` reading the binding
       from the Cloudflare env (expose a `getDb(env)` helper — Workers have no module-scope
