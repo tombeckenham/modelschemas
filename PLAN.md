@@ -349,8 +349,12 @@ consumer: every list response includes `_links` to drill deeper, errors carry re
     (keyless sync: 5 endpoints / 10 versions) — valid payload passes, bad payload
     yields structured required/enum errors. Response includes the schema contentHash
     so agents know which version judged them.
-- [ ] **4.5 Changes feed.** `GET /v1/changes?since=&provider=&type=` (cursor-paginated)
+- [x] **4.5 Changes feed.** `GET /v1/changes?since=&provider=&type=` (cursor-paginated)
       — the polling-friendly alternative to webhooks. _Accepts:_ cursor pagination test.
+  - Note: opaque (createdAt, id) keyset cursor (base64), newest first, stable under
+    concurrent inserts, tie-break tested on equal timestamps; limit clamped to 200;
+    `_links.next` carries the ready-made next-page URL. Live-verified against real
+    sync-generated change rows.
 
 ## Phase 5 — Agent signup & access control
 

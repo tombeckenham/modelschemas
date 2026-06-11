@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as V1IndexRouteImport } from './routes/v1/index'
 import { Route as V1ValidateRouteImport } from './routes/v1/validate'
 import { Route as V1StatusRouteImport } from './routes/v1/status'
+import { Route as V1ChangesRouteImport } from './routes/v1/changes'
 import { Route as V1ProvidersIndexRouteImport } from './routes/v1/providers/index'
 import { Route as V1ModelsIndexRouteImport } from './routes/v1/models/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -53,6 +54,11 @@ const V1ValidateRoute = V1ValidateRouteImport.update({
 const V1StatusRoute = V1StatusRouteImport.update({
   id: '/v1/status',
   path: '/v1/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V1ChangesRoute = V1ChangesRouteImport.update({
+  id: '/v1/changes',
+  path: '/v1/changes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const V1ProvidersIndexRoute = V1ProvidersIndexRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/openapi.json': typeof OpenapiDotjsonRoute
+  '/v1/changes': typeof V1ChangesRoute
   '/v1/status': typeof V1StatusRoute
   '/v1/validate': typeof V1ValidateRoute
   '/v1/': typeof V1IndexRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/openapi.json': typeof OpenapiDotjsonRoute
+  '/v1/changes': typeof V1ChangesRoute
   '/v1/status': typeof V1StatusRoute
   '/v1/validate': typeof V1ValidateRoute
   '/v1': typeof V1IndexRoute
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/openapi.json': typeof OpenapiDotjsonRoute
+  '/v1/changes': typeof V1ChangesRoute
   '/v1/status': typeof V1StatusRoute
   '/v1/validate': typeof V1ValidateRoute
   '/v1/': typeof V1IndexRoute
@@ -162,6 +171,7 @@ export interface FileRouteTypes {
     | '/'
     | '/llms.txt'
     | '/openapi.json'
+    | '/v1/changes'
     | '/v1/status'
     | '/v1/validate'
     | '/v1/'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/'
     | '/llms.txt'
     | '/openapi.json'
+    | '/v1/changes'
     | '/v1/status'
     | '/v1/validate'
     | '/v1'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/'
     | '/llms.txt'
     | '/openapi.json'
+    | '/v1/changes'
     | '/v1/status'
     | '/v1/validate'
     | '/v1/'
@@ -214,6 +226,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   OpenapiDotjsonRoute: typeof OpenapiDotjsonRoute
+  V1ChangesRoute: typeof V1ChangesRoute
   V1StatusRoute: typeof V1StatusRoute
   V1ValidateRoute: typeof V1ValidateRoute
   V1IndexRoute: typeof V1IndexRoute
@@ -270,6 +283,13 @@ declare module '@tanstack/react-router' {
       path: '/v1/status'
       fullPath: '/v1/status'
       preLoaderRoute: typeof V1StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/changes': {
+      id: '/v1/changes'
+      path: '/v1/changes'
+      fullPath: '/v1/changes'
+      preLoaderRoute: typeof V1ChangesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v1/providers/': {
@@ -342,6 +362,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   OpenapiDotjsonRoute: OpenapiDotjsonRoute,
+  V1ChangesRoute: V1ChangesRoute,
   V1StatusRoute: V1StatusRoute,
   V1ValidateRoute: V1ValidateRoute,
   V1IndexRoute: V1IndexRoute,
