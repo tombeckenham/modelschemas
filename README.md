@@ -1,296 +1,118 @@
-Welcome to your new TanStack Start app!
+# modelschemas
 
-# Getting Started
+Live AI model schema service on Cloudflare Workers: per-endpoint
+request/response JSON Schemas and model metadata for monitored providers
+(OpenAI, Anthropic, Gemini, xAI Grok, ElevenLabs, OpenRouter, FAL), with
+react-query-style server-side caching (D1 source of truth, KV hot cache,
+stale-while-revalidate) and automatic refresh — model lists every 15 minutes,
+full OpenAPI spec syncs daily.
 
-To run this application:
+Surfaces:
+
+- **HTTP API** under `/v1` — catalog, schemas, validation, changes feed
+  (see `GET /v1` or [openapi.json](./openapi.json))
+- **Agent guide** at `/llms.txt`, **agent skill** at `/skill`, **docs** at `/docs`
+- **MCP server** at `/mcp` (streamable HTTP; tools: `list_models`,
+  `get_model`, `get_schema`, `validate_payload`, `recent_changes`)
+- **Agent auth** — agent-auth protocol discovery at
+  `/.well-known/agent-configuration`, plus an API-key fallback
+  (`POST /v1/agents/register-key`)
+- **TS client** `@modelschemas/client` (packages/client, generated from the
+  spec) and the **`modelschemas` CLI** (packages/cli)
+
+## Development
 
 ```bash
 bun install
-bun --bun run dev
-```
-
-# Building For Production
-
-To build this application for production:
-
-```bash
+bun run dev              # dev server on http://localhost:3100 (NOT --bun)
+bun run test             # vitest: unit + workers-pool projects (NOT --bun)
+bun --bun run lint
+bun run typecheck
 bun --bun run build
 ```
 
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+Local data setup:
 
 ```bash
-bun --bun run test
+bun run db:migrate       # apply migrations to wrangler's local D1
+bun run seed             # seed the 7 providers
+bun run dev              # then, in another shell:
+curl -X POST http://localhost:3100/v1/admin/sync/openrouter -H "X-Admin-Key: $ADMIN_KEY"
 ```
 
-## Styling
+Secrets live in `.env.local` (see CLAUDE.md). `ADMIN_KEY` gates
+`POST /v1/admin/sync/{provider}`. Useful scripts:
+`bun scripts/agent-roundtrip.ts` (agent-auth end-to-end),
+`bun scripts/client-smoke.ts` (typed client), `bun run check:client`
+(client/spec drift), `bun scripts/emit-skill.ts` (regenerate SKILL.md).
 
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
+## Production setup
 
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `bun install @tailwindcss/vite tailwindcss -D`
-
-## Linting & Formatting
-
-This project uses [eslint](https://eslint.org/) and [prettier](https://prettier.io/) for linting and formatting. Eslint is configured using [tanstack/eslint-config](https://tanstack.com/config/latest/docs/eslint). The following scripts are available:
-
-```bash
-bun --bun run lint
-bun --bun run format
-bun --bun run check
-```
-
-## Deploy to Cloudflare Workers
-
-This project uses the Cloudflare Vite plugin (configured in `vite.config.ts`) and `wrangler.jsonc`:
-
-1. Install Wrangler: `npm install -g wrangler`
-2. Authenticate: `wrangler login`
-3. Deploy: `npx wrangler deploy`
-
-For production env vars, run `wrangler secret put MY_VAR` for each secret listed in `.env.example`. Public (non-secret) vars go in `wrangler.jsonc` under `vars`.
-
-KV, D1, R2, and Durable Object bindings are configured in `wrangler.jsonc` — see https://developers.cloudflare.com/workers/wrangler/configuration/.
-
-## Shadcn
-
-Add components using the latest version of [Shadcn](https://ui.shadcn.com/).
-
-```bash
-pnpm dlx shadcn@latest add button
-```
-
-## Setting up Better Auth
-
-1. Generate and set the `BETTER_AUTH_SECRET` environment variable in your `.env.local`:
+1. Create resources and put their IDs in `wrangler.jsonc`:
 
    ```bash
-   bunx --bun @better-auth/cli secret
+   bunx wrangler d1 create modelschemas        # → d1_databases[0].database_id
+   bunx wrangler kv namespace create SCHEMA_CACHE  # → kv_namespaces[0].id
    ```
 
-2. Visit the [Better Auth documentation](https://www.better-auth.com) to unlock the full potential of authentication in your app.
+2. Apply migrations and seed:
 
-### Adding a Database (Optional)
+   ```bash
+   bun run db:migrate:remote
+   bun run seed -- --remote
+   ```
 
-Better Auth can work in stateless mode, but to persist user data, add a database:
+3. Secrets (`wrangler secret put <NAME>`): `BETTER_AUTH_SECRET` (32+ random
+   bytes), `ADMIN_KEY`, and optionally provider keys — `OPENAI_API_KEY`,
+   `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `XAI_API_KEY`,
+   `ELEVENLABS_API_KEY`, `FAL_KEY`. Providers without keys are skipped with
+   a recorded warning (OpenRouter needs none; Anthropic's spec sync is also
+   keyless). Set the `BETTER_AUTH_URL` var in `wrangler.jsonc` to the
+   deployed origin (agent JWT audiences are origin-bound).
 
-```typescript
-// src/lib/auth.ts
-import { betterAuth } from 'better-auth'
-import { Pool } from 'pg'
+4. Deploy and warm:
 
-export const auth = betterAuth({
-  database: new Pool({
-    connectionString: process.env.DATABASE_URL,
-  }),
-  // ... rest of config
-})
-```
+   ```bash
+   bun run deploy
+   curl https://<worker-url>/v1/status
+   curl -X POST https://<worker-url>/v1/admin/sync/openrouter -H "X-Admin-Key: ..."
+   ```
 
-Then run migrations:
+Cron triggers (`*/15 * * * *` models poll + webhook drain, `0 5 * * *` spec
+sync) start automatically on deploy.
 
-```bash
-bunx --bun @better-auth/cli migrate
-```
+## Runbook: a provider sync is failing
 
-# TanStack Chat Application
+1. `GET /v1/status` — the failing provider shows `status: "degraded"` and a
+   stale `lastSyncedAt`/`lastPolledAt`.
+2. Tail logs during a manual sync (`observability.enabled` is on, so the
+   dashboard's Workers Logs works too):
 
-Am example chat application built with TanStack Start, TanStack Store, and Claude AI.
+   ```bash
+   bunx wrangler tail modelschemas --format pretty
+   # in another shell:
+   curl -X POST https://<worker-url>/v1/admin/sync/<provider> -H "X-Admin-Key: ..."
+   ```
 
-## .env Updates
+   Cron handlers log structured JSON lines:
+   `{"job":"models-poll"|"spec-sync"|"webhooks", outcomes:[{providerId, error?, skipped?, ...}]}`.
 
-```env
-ANTHROPIC_API_KEY=your_anthropic_api_key
-```
-
-## ✨ Features
-
-### AI Capabilities
-
-- 🤖 Powered by Claude 3.5 Sonnet
-- 📝 Rich markdown formatting with syntax highlighting
-- 🎯 Customizable system prompts for tailored AI behavior
-- 🔄 Real-time message updates and streaming responses (coming soon)
-
-### User Experience
-
-- 🎨 Modern UI with Tailwind CSS and Lucide icons
-- 🔍 Conversation management and history
-- 🔐 Secure API key management
-- 📋 Markdown rendering with code highlighting
-
-### Technical Features
-
-- 📦 Centralized state management with TanStack Store
-- 🔌 Extensible architecture for multiple AI providers
-- 🛠️ TypeScript for type safety
+3. Interpret the outcome:
+   - `skipped: "<provider>: X_API_KEY not set"` → set the secret
+     (`wrangler secret put X_API_KEY`) or ignore if intentional.
+   - `error: "fetch failed: <url> → 4xx/5xx"` → the upstream spec/models URL
+     moved or is down; check `providers.spec_source_url` (seeded from
+     `src/db/seed-providers.ts`) against the provider's docs.
+   - Dangling-`$ref` warnings → the upstream spec changed shape; see
+     `src/server/ingest/bundle.ts`.
+4. One provider failing never sinks the run (per-provider isolation); fix
+   and re-trigger with the admin sync endpoint. Schema history is preserved
+   across failures — superseded versions stay queryable via
+   `?version=<contentHash>`.
 
 ## Architecture
 
-### Tech Stack
-
-- **Frontend Framework**: TanStack Start
-- **Routing**: TanStack Router
-- **State Management**: TanStack Store
-- **Styling**: Tailwind CSS
-- **AI Integration**: Anthropic's Claude API
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from '@tanstack/react-router'
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+See `CLAUDE.md` for the operational map and `PLAN.md` for the full build
+history (every task, decision, and gotcha). Borrows the provider-registry,
+activity-grouping, and `$defs`-bundling design from TanStack AI PR #622,
+re-implemented as a runtime service (no codegen) on Workers.

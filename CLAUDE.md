@@ -4,68 +4,122 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-A Cloudflare Workers service giving AI agents live access to model schemas: per-endpoint
-request/response JSON Schemas and model metadata for every monitored provider, with
-react-query-style server-side caching (persistent, stale-while-revalidate) and
-auto-refresh when providers ship new models. Design borrows from TanStack AI PR #622
-(`@tanstack/ai-schemas`).
+A Cloudflare Workers service giving AI agents live access to model schemas:
+per-endpoint request/response JSON Schemas and model metadata for 7 monitored
+providers (OpenAI, Anthropic, Gemini, xAI Grok, ElevenLabs, OpenRouter, FAL),
+with react-query-style server-side caching (D1 source of truth, KV hot cache,
+stale-while-revalidate) and cron-driven auto-refresh. Design ported from
+TanStack AI PR #622 (`@tanstack/ai-schemas`), minus codegen — schemas are
+extracted/bundled at runtime and served over HTTP/MCP.
 
-**The build is driven by `PLAN.md`** — a phased, checkbox task list with its own loop
-protocol and settled architecture decisions (D1 as source of truth + KV hot cache,
-two-tier cron refresh, better-auth agent-auth for agent signup, hey-api-generated
-client + CLI + skill from our own OpenAPI spec). Read PLAN.md before doing feature
-work; don't relitigate its "Architecture decisions" section. The codebase is currently
-the TanStack Start scaffold described below — the Commands/Architecture sections here
-reflect what exists now, not the plan's end state, and PLAN.md task 8.5 updates them.
+**`PLAN.md` is the build log** — every task, settled architecture decision,
+and gotcha note. Phases 0–7 are complete; Phase 8 (production deploy + npm
+publish) awaits owner authorization. Don't relitigate PLAN.md's
+"Architecture decisions" section.
 
 ## Commands
 
-This project uses Bun as the package manager/runtime.
+Bun is the package manager; the repo is a bun workspace (`packages/*`).
 
 ```bash
-bun install              # install dependencies
-bun run dev              # dev server on port 3100 (NOT --bun: bun's ws shim hangs vite startup)
-bun --bun run build      # production build
-bun run test             # run all tests (NOT --bun: the cloudflare vitest pool needs node)
-bun run test src/path/to/file.test.ts       # run a single test file
+bun install              # install + link workspace packages
+bun run dev              # dev server on http://localhost:3100 (NOT --bun: bun's ws shim hangs vite)
+bun run test             # vitest, unit + workers projects (NOT --bun: cloudflare pool needs node)
+bun run test src/path/to/file.test.ts       # single test file
 bun --bun run lint       # eslint (no-explicit-any + no-unsafe-* are errors)
-bun run typecheck        # tsc --noEmit
+bun run typecheck        # tsc --noEmit (includes packages/*)
 bun --bun run format     # prettier --write + eslint --fix
 bun --bun run check      # prettier --check
-bun run deploy           # build + wrangler deploy (Cloudflare Workers)
+bun --bun run build      # production build (emits dist/server/wrangler.json)
+bun run deploy           # build + wrangler deploy
 ```
 
-Lefthook pre-commit hooks (installed via the `prepare` script) run prettier, eslint,
-and typecheck — don't bypass them with `--no-verify`. The `any` type is banned by
-lint; tsconfig has `strict` + `noUncheckedIndexedAccess` + `noImplicitOverride`.
-Note: the Cloudflare vite plugin is skipped when running under vitest
-(see `vite.config.ts`) — Workers-binding tests need `@cloudflare/vitest-pool-workers`
-(PLAN.md task 0.3).
-
-Database (Drizzle Kit, reads `DATABASE_URL` from `.env.local`/`.env`):
+Database (drizzle-kit generates; wrangler applies):
 
 ```bash
-bun run db:generate      # generate migrations from schema
-bun run db:migrate       # apply migrations
-bun run db:push          # push schema directly to db
-bun run db:studio        # drizzle studio
+bun run db:generate          # generate migrations from src/db/schema.ts
+bun run db:migrate           # apply to wrangler's LOCAL D1
+bun run db:migrate:remote    # apply to remote D1
+bun run seed                 # seed the 7 providers (--remote for prod)
 ```
 
-Add shadcn/ui components with the latest version of shadcn:
+Generated artifacts (committed; CI fails on drift):
 
 ```bash
-pnpm dlx shadcn@latest add button
+bun run openapi:emit         # src/server/openapi.ts → openapi.json
+bun run generate:client      # → packages/client/src/generated (hey-api 0.97.2, pinned)
+bun run check:client         # regenerate + git diff --exit-code (CI step)
+bun scripts/emit-skill.ts    # src/server/skill.ts → skill/modelschemas/SKILL.md
 ```
+
+`openapi.json` and `SKILL.md` are prettier-ignored (byte-stable emitted
+artifacts). Lefthook pre-commit runs prettier/eslint/typecheck — never
+`--no-verify`. The cloudflare vite plugin is skipped under vitest;
+Workers-binding tests (`*.worker.test.ts`) run in workerd via
+`@cloudflare/vitest-pool-workers` (config: `vitest.workers.config.ts`,
+migrations auto-applied via TEST_MIGRATIONS).
+
+Local verification flows: `bun scripts/agent-roundtrip.ts` (agent-auth
+register→execute), `bun scripts/client-smoke.ts` (typed client),
+`bun packages/cli <cmd>` (CLI). Admin sync:
+`curl -X POST localhost:3100/v1/admin/sync/openrouter -H "X-Admin-Key: $ADMIN_KEY"`.
 
 ## Architecture
 
-TanStack Start (React 19, SSR) app deployed to Cloudflare Workers via the Cloudflare Vite plugin (`vite.config.ts`) and `wrangler.jsonc`. Styling is Tailwind CSS v4 (configured through the Vite plugin, no tailwind.config file). AI chat functionality uses the `@tanstack/ai` packages with provider adapters (Anthropic, OpenAI, Gemini, Ollama).
+TanStack Start (React 19, SSR) on Cloudflare Workers via the Cloudflare vite
+plugin + `wrangler.jsonc`. Tailwind v4. Worker entry is `src/worker.ts`:
+rate-limits `/v1/*`, delegates fetch to the Start handler, and runs the two
+crons (15-min models poll + webhook drain; daily 05:00 UTC spec sync).
 
-- **Routing**: File-based via TanStack Router. Routes live in `src/routes/`; `src/routeTree.gen.ts` is auto-generated (by the dev server or `bun run generate-routes`) — never edit it by hand. The root layout/document shell is `src/routes/__root.tsx`. API routes are route files with a `server.handlers` property (e.g. `src/routes/api/auth/$.ts`).
-- **Server code**: Use `createServerFn` from `@tanstack/react-start` for server functions, or route loaders for data fetching.
-- **Auth**: Better Auth, configured in `src/lib/auth.ts` (email/password + TanStack Start cookies plugin), exposed through the catch-all route `src/routes/api/auth/$.ts`. Client helpers in `src/lib/auth-client.ts`. Requires `BETTER_AUTH_SECRET` in `.env.local`.
-- **Database**: Drizzle ORM over better-sqlite3. Schema in `src/db/schema.ts`, client in `src/db/index.ts`, Drizzle Kit config in `drizzle.config.ts` (migrations output to `./drizzle`).
-- **Path aliases**: `#/*` and `@/*` both map to `./src/*` (see `tsconfig.json`). `allowImportingTsExtensions` is on — imports may include `.ts` extensions (e.g. `src/db/index.ts` imports `./schema.ts`).
-- **Env vars**: `ANTHROPIC_API_KEY`, `BETTER_AUTH_SECRET`, `DATABASE_URL` go in `.env.local`. For production, secrets go via `wrangler secret put`; public vars in `wrangler.jsonc` under `vars`.
+Request path: route files in `src/routes/` (server handlers via
+`server.handlers`) → service functions in `src/server/` → drizzle/D1 +
+KV. Bindings come from `import { env, waitUntil } from 'cloudflare:workers'`
+(typed locally in `src/cloudflare-env.d.ts` — workers-types are NOT global).
 
-Files prefixed with `demo` are scaffold examples and can be safely deleted.
+- **Ingest** (`src/server/providers/` + `src/server/ingest/`): per-provider
+  `ProviderConfig` (fetchSpec/listModels/classify) → `bundle.ts` extracts
+  request/response schemas and inlines `$ref` closures under `$defs` →
+  `sync.ts` content-hash-diffs into `schema_versions` + `changes`, warms KV;
+  `poll-models.ts` diffs model lists. Keyed providers skip cleanly when the
+  secret is absent.
+- **API** (`src/routes/v1/`): catalog, schema reads (SWR via
+  `src/server/cache.ts`, ETag/304 via `http-cache.ts`), `POST /v1/validate`
+  (@cfworker/json-schema), cursor-paginated `/v1/changes`, subscriptions.
+  Errors are always `{ error: { code, message } }` with remediation hints.
+- **MCP** (`src/server/mcp.ts`, route `/mcp`): stateless streamable-HTTP
+  JSON-RPC wrapping the same service functions.
+- **Auth** (`src/lib/auth.ts` factory → lazy runtime instance in
+  `src/server/auth.ts`; betterAuth CANNOT construct at module scope in
+  workerd): better-auth + agent-auth (capabilities derived from
+  `src/server/openapi.ts`, admin ops excluded), api-key fallback, bearer.
+  `requireAgent` (`src/server/require-agent.ts`) guards native routes; agent
+  JWT jtis are single-use — mint per request. Rate limiting
+  (`src/server/rate-limit.ts`): KV fixed-window, 60/h anon-IP, 5k/h
+  per verified credential.
+- **Webhooks** (`src/server/webhooks.ts`): checkpointed fan-out of `changes`
+  to subscriptions, HMAC-SHA256-signed delivery, exponential backoff,
+  auto-pause after 8 failures; drained by the 15-min cron. Destination URLs
+  are SSRF-guarded (public https only, no redirects).
+- **DB** (`src/db/schema.ts`): better-auth tables + providers/models/
+  endpoints/schema_versions/changes + cache_meta/subscriptions/
+  webhook_deliveries. Epoch-second integers for our tables; ids are slugs
+  (`provider/path` for endpoints, `provider-rawid-slug` for models).
+- **Workspace packages**: `packages/client` (`@modelschemas/client`,
+  generated + hand-written auth entry), `packages/cli` (`modelschemas` bin:
+  login/whoami/models/schema/validate/changes/subscribe).
+- **Path aliases**: `#/*` and `@/*` → `./src/*`; `.ts` import extensions
+  allowed. `src/routeTree.gen.ts` is generated by the DEV SERVER (the pinned
+  `tsr` CLI emits an old format) — never edit by hand; boot `bun run dev`
+  after adding routes, then typecheck.
+- **Env**: `.env.local` holds `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`
+  (http://localhost:3100 — JWT audiences are origin-bound), `ADMIN_KEY`,
+  optional provider keys. Prod: `wrangler secret put`. README has the full
+  production-setup + runbook.
+
+API map: `GET /v1` (index) · `/v1/status` · `/v1/providers[/{p}/models]` ·
+`/v1/models[?activity,provider,capability,q]` · `/v1/models/{p}/{id}` ·
+`/v1/schemas/{p}[/{activity}[/{endpointId}?kind,version]]` ·
+`POST /v1/validate` · `/v1/changes` · `POST /v1/agents/register-key` ·
+`/v1/agents/me` · `/v1/subscriptions` · `POST /v1/admin/sync/{p}` ·
+`/openapi.json` · `/llms.txt` · `/skill` · `/docs` · `/mcp` ·
+`/.well-known/agent-configuration`.

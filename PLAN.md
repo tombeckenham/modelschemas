@@ -511,21 +511,38 @@ the agent-auth capability list (5.1). Spec drift breaks a CI check, not a user.
 
 ## Phase 8 — Ship
 
-- [ ] **8.1 Production setup.** Create real D1 + KV resources, set IDs in
+- [x] ~BLOCKED~ **8.1 Production setup.** Create real D1 + KV resources, set IDs in
       `wrangler.jsonc`; `wrangler secret put` for `BETTER_AUTH_SECRET`, provider keys
       (`FAL_KEY`, `ELEVENLABS_API_KEY`, …), `ADMIN_KEY`. Document in README. _Accepts:_
       `bun run deploy` succeeds; `/v1/status` live.
-- [ ] **8.2 First production sync.** Trigger admin sync for all providers; verify
+  - BLOCKED 2026-06-11: deploying to Tom's Cloudflare account is an outward-facing
+    action awaiting his explicit go-ahead (asked, no reply by the 30-min fallback).
+    Everything is deploy-ready: wrangler.jsonc has observability + worker name set,
+    README documents the exact resource/secret/deploy steps. Unblock: say "deploy it".
+- [x] ~BLOCKED~ **8.2 First production sync.** Trigger admin sync for all providers; verify
       `/v1/models?activity=chat` returns real multi-provider data in prod. _Accepts:_
       spot-check Anthropic + OpenRouter schemas served with ETags.
-- [ ] **8.3 Observability.** `wrangler.jsonc` `observability.enabled`, structured
+  - BLOCKED 2026-06-11: depends on 8.1. The same flow is fully verified locally
+    (admin sync of both providers, ETag/304 round-trips).
+- [x] **8.3 Observability.** `wrangler.jsonc` `observability.enabled`, structured
       `console.log` JSON lines in cron handlers (provider, duration, changes count),
       README runbook for "a provider sync is failing". _Accepts:_ logs visible via
       `wrangler tail` during a manual sync.
-- [ ] **8.4 Publish client + CLI.** npm publish `@modelschemas/client` and the
+  - Note: observability.enabled set, worker renamed `modelschemas`, cron handlers
+    already log structured JSON lines (provider/outcomes), README rewritten with the
+    runbook + production setup. The wrangler-tail acceptance can only run post-deploy
+    (8.1) — everything tail-able is in place.
+- [x] ~BLOCKED~ **8.4 Publish client + CLI.** npm publish `@modelschemas/client` and the
       `modelschemas` CLI (changesets or manual version bump); install instructions in
       README, `/docs`, and the skill. _Accepts:_ `bunx modelschemas@latest whoami`
       works against prod.
-- [ ] **8.5 Update CLAUDE.md** with the new architecture (D1/KV bindings, cron
+  - BLOCKED 2026-06-11: npm publish is irreversible and needs Tom's npm account +
+    scope decision (@modelschemas org availability unverified) + a deployed prod URL
+    (8.1). Packages are publish-shaped (files/bin/exports set).
+- [x] **8.5 Update CLAUDE.md** with the new architecture (D1/KV bindings, cron
       entry point, ingest pipeline layout, workspace packages, API map) replacing the
       starter description. _Accepts:_ CLAUDE.md matches reality.
+  - Note: full rewrite — commands (bun/--bun split, db/codegen scripts), worker entry
+    - ingest/API/auth/webhook architecture, workspace packages, route-tree-regen and
+      module-scope-auth gotchas, API map. README rewritten alongside (8.1 docs + 8.3
+      runbook).
