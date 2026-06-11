@@ -19,4 +19,7 @@ declare module 'cloudflare:workers' {
   }
 
   export const env: WorkerBindings
+
+  /** Extends the current request's lifetime past the response (workerd-native). */
+  export function waitUntil(promise: Promise<unknown>): void
 }

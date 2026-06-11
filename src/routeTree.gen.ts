@@ -17,9 +17,12 @@ import { Route as V1StatusRouteImport } from './routes/v1/status'
 import { Route as V1ProvidersIndexRouteImport } from './routes/v1/providers/index'
 import { Route as V1ModelsIndexRouteImport } from './routes/v1/models/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as V1SchemasProviderIndexRouteImport } from './routes/v1/schemas/$provider/index'
 import { Route as V1ProvidersProviderModelsRouteImport } from './routes/v1/providers/$provider.models'
 import { Route as V1ModelsProviderModelIdRouteImport } from './routes/v1/models/$provider.$modelId'
 import { Route as V1AdminSyncProviderRouteImport } from './routes/v1/admin/sync.$provider'
+import { Route as V1SchemasProviderActivityIndexRouteImport } from './routes/v1/schemas/$provider/$activity/index'
+import { Route as V1SchemasProviderActivitySplatRouteImport } from './routes/v1/schemas/$provider/$activity/$'
 
 const OpenapiDotjsonRoute = OpenapiDotjsonRouteImport.update({
   id: '/openapi.json',
@@ -61,6 +64,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V1SchemasProviderIndexRoute = V1SchemasProviderIndexRouteImport.update({
+  id: '/v1/schemas/$provider/',
+  path: '/v1/schemas/$provider/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V1ProvidersProviderModelsRoute =
   V1ProvidersProviderModelsRouteImport.update({
     id: '/v1/providers/$provider/models',
@@ -77,6 +85,18 @@ const V1AdminSyncProviderRoute = V1AdminSyncProviderRouteImport.update({
   path: '/v1/admin/sync/$provider',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V1SchemasProviderActivityIndexRoute =
+  V1SchemasProviderActivityIndexRouteImport.update({
+    id: '/v1/schemas/$provider/$activity/',
+    path: '/v1/schemas/$provider/$activity/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const V1SchemasProviderActivitySplatRoute =
+  V1SchemasProviderActivitySplatRouteImport.update({
+    id: '/v1/schemas/$provider/$activity/$',
+    path: '/v1/schemas/$provider/$activity/$',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -90,6 +110,9 @@ export interface FileRoutesByFullPath {
   '/v1/admin/sync/$provider': typeof V1AdminSyncProviderRoute
   '/v1/models/$provider/$modelId': typeof V1ModelsProviderModelIdRoute
   '/v1/providers/$provider/models': typeof V1ProvidersProviderModelsRoute
+  '/v1/schemas/$provider/': typeof V1SchemasProviderIndexRoute
+  '/v1/schemas/$provider/$activity/$': typeof V1SchemasProviderActivitySplatRoute
+  '/v1/schemas/$provider/$activity/': typeof V1SchemasProviderActivityIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -103,6 +126,9 @@ export interface FileRoutesByTo {
   '/v1/admin/sync/$provider': typeof V1AdminSyncProviderRoute
   '/v1/models/$provider/$modelId': typeof V1ModelsProviderModelIdRoute
   '/v1/providers/$provider/models': typeof V1ProvidersProviderModelsRoute
+  '/v1/schemas/$provider': typeof V1SchemasProviderIndexRoute
+  '/v1/schemas/$provider/$activity/$': typeof V1SchemasProviderActivitySplatRoute
+  '/v1/schemas/$provider/$activity': typeof V1SchemasProviderActivityIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -117,6 +143,9 @@ export interface FileRoutesById {
   '/v1/admin/sync/$provider': typeof V1AdminSyncProviderRoute
   '/v1/models/$provider/$modelId': typeof V1ModelsProviderModelIdRoute
   '/v1/providers/$provider/models': typeof V1ProvidersProviderModelsRoute
+  '/v1/schemas/$provider/': typeof V1SchemasProviderIndexRoute
+  '/v1/schemas/$provider/$activity/$': typeof V1SchemasProviderActivitySplatRoute
+  '/v1/schemas/$provider/$activity/': typeof V1SchemasProviderActivityIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,6 +161,9 @@ export interface FileRouteTypes {
     | '/v1/admin/sync/$provider'
     | '/v1/models/$provider/$modelId'
     | '/v1/providers/$provider/models'
+    | '/v1/schemas/$provider/'
+    | '/v1/schemas/$provider/$activity/$'
+    | '/v1/schemas/$provider/$activity/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -145,6 +177,9 @@ export interface FileRouteTypes {
     | '/v1/admin/sync/$provider'
     | '/v1/models/$provider/$modelId'
     | '/v1/providers/$provider/models'
+    | '/v1/schemas/$provider'
+    | '/v1/schemas/$provider/$activity/$'
+    | '/v1/schemas/$provider/$activity'
   id:
     | '__root__'
     | '/'
@@ -158,6 +193,9 @@ export interface FileRouteTypes {
     | '/v1/admin/sync/$provider'
     | '/v1/models/$provider/$modelId'
     | '/v1/providers/$provider/models'
+    | '/v1/schemas/$provider/'
+    | '/v1/schemas/$provider/$activity/$'
+    | '/v1/schemas/$provider/$activity/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -172,6 +210,9 @@ export interface RootRouteChildren {
   V1AdminSyncProviderRoute: typeof V1AdminSyncProviderRoute
   V1ModelsProviderModelIdRoute: typeof V1ModelsProviderModelIdRoute
   V1ProvidersProviderModelsRoute: typeof V1ProvidersProviderModelsRoute
+  V1SchemasProviderIndexRoute: typeof V1SchemasProviderIndexRoute
+  V1SchemasProviderActivitySplatRoute: typeof V1SchemasProviderActivitySplatRoute
+  V1SchemasProviderActivityIndexRoute: typeof V1SchemasProviderActivityIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v1/schemas/$provider/': {
+      id: '/v1/schemas/$provider/'
+      path: '/v1/schemas/$provider'
+      fullPath: '/v1/schemas/$provider/'
+      preLoaderRoute: typeof V1SchemasProviderIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v1/providers/$provider/models': {
       id: '/v1/providers/$provider/models'
       path: '/v1/providers/$provider/models'
@@ -253,6 +301,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V1AdminSyncProviderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v1/schemas/$provider/$activity/': {
+      id: '/v1/schemas/$provider/$activity/'
+      path: '/v1/schemas/$provider/$activity'
+      fullPath: '/v1/schemas/$provider/$activity/'
+      preLoaderRoute: typeof V1SchemasProviderActivityIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/schemas/$provider/$activity/$': {
+      id: '/v1/schemas/$provider/$activity/$'
+      path: '/v1/schemas/$provider/$activity/$'
+      fullPath: '/v1/schemas/$provider/$activity/$'
+      preLoaderRoute: typeof V1SchemasProviderActivitySplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -268,6 +330,9 @@ const rootRouteChildren: RootRouteChildren = {
   V1AdminSyncProviderRoute: V1AdminSyncProviderRoute,
   V1ModelsProviderModelIdRoute: V1ModelsProviderModelIdRoute,
   V1ProvidersProviderModelsRoute: V1ProvidersProviderModelsRoute,
+  V1SchemasProviderIndexRoute: V1SchemasProviderIndexRoute,
+  V1SchemasProviderActivitySplatRoute: V1SchemasProviderActivitySplatRoute,
+  V1SchemasProviderActivityIndexRoute: V1SchemasProviderActivityIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

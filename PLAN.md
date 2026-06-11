@@ -326,7 +326,7 @@ consumer: every list response includes `_links` to drill deeper, errors carry re
     invalid `?activity=` → 400 listing valid values. Curl-verified against live local
     data (q=claude → 20 OpenRouter models, capability=tools → 252, encoded raw-id
     lookup, 404s with remediation). All reads use the 3.2 cachedJson helper.
-- [ ] **4.3 Schema endpoints.**
+- [x] **4.3 Schema endpoints.**
   - `GET /v1/schemas/{provider}` — activities + endpoint ids.
   - `GET /v1/schemas/{provider}/{activity}` — endpoint-id-keyed map (current versions),
     mirroring the PR's `endpoint-schema-map` shape.
@@ -334,6 +334,12 @@ consumer: every list response includes `_links` to drill deeper, errors carry re
     single self-contained JSON Schema; defaults to current input schema.
     All via the SWR layer + ETag helper. _Accepts:_ schemas served byte-identical to D1
     content; 304s work; unknown ids → structured 404 with valid-id hints.
+  - Note: endpoint ids contain slashes, so the single-schema route is a splat
+    (`$activity/$.ts`); clients URL-encode (`chat%2Fcompletions`). `waitUntil` comes
+    straight from `cloudflare:workers` (added to the local module declaration).
+    Versioned (content-addressed) reads cache with staleTime 86400, current reads 300;
+    single-schema ETag is the stored contentHash. Live-verified on synced OpenRouter
+    data including a 304 round-trip; byte-identity asserted in worker tests.
 - [ ] **4.4 Validation endpoint.** `POST /v1/validate` with
       `{ provider, endpointId, kind?, payload }` → `{ valid, errors: [{ path, message, keyword }] }`
       using `@cfworker/json-schema`. _Accepts:_ test with one valid + one invalid
