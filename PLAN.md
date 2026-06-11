@@ -552,3 +552,48 @@ the agent-auth capability list (5.1). Spec drift breaks a CI check, not a user.
     - ingest/API/auth/webhook architecture, workspace packages, route-tree-regen and
       module-scope-auth gotchas, API map. README rewritten alongside (8.1 docs + 8.3
       runbook).
+
+## Phase 9 — Human users + site polish
+
+Requested by Tom 2026-06-11: a human-facing surface alongside the agent one.
+The production domain is **modelschemas.com**.
+
+- [ ] **9.1 Custom domain.** Attach `modelschemas.com` to the deployed worker
+      (Cloudflare custom domain on this account's zone; `routes` in
+      `wrangler.jsonc` with `custom_domain: true`), set the
+      `BETTER_AUTH_URL` var to `https://modelschemas.com` (agent JWT
+      audiences are origin-bound), redeploy, and confirm the workers.dev URL
+      still serves (or document the canonical-host choice). _Accepts:_
+      `https://modelschemas.com/v1/status` live. If the zone is not in the
+      OpenStory account, mark BLOCKED with what Tom needs to do.
+- [ ] **9.2 Email OTP sign-in for humans.** Add better-auth's `emailOTP`
+      plugin to `createAuth` with a mail abstraction in
+      `src/server/email.ts`: when `RESEND_API_KEY` is set, send via the
+      Resend HTTP API from `login@modelschemas.com`; otherwise log the code
+      as a structured console line (dev mode). Build a minimal `/login` page
+      (email → code → signed-in session) and a signed-in indicator. Keep
+      email/password enabled (delegated-mode approvals depend on it).
+      _Accepts:_ worker test issues + verifies an OTP via an injected
+      sender; live dev sign-in works end to end using the logged code.
+- [ ] **9.3 Human API-key management.** `/account` page for signed-in users:
+      list, create (name + optional expiry), and revoke their API keys via
+      the better-auth api-key plugin's session-authed endpoints; the key
+      value is shown exactly once on creation, with copy-paste usage snippet
+      (`Authorization: Bearer …`). The page explains what keys unlock (5k
+      req/h + subscriptions). _Accepts:_ live flow — sign in, create key,
+      key authenticates `/v1/agents/me`, revoke, key 401s; worker tests for
+      the session-scoped key lifecycle.
+- [ ] **9.4 Frontend overhaul (use the /frontend-design:frontend-design
+      skill).** Make the site look hot while staying agent-first: redesign
+      the landing page (`/`) with a hero that pitches the service, a
+      prominent "for agents" section (copy-paste curl + CLI + MCP + skill
+      install examples, llms.txt/discovery links), the live provider status + latest-changes data, and nav to /docs, /login, /account. Restyle
+      /docs, /login, /account to match. No regression to any agent surface
+      (JSON endpoints untouched). _Accepts:_ pages render with the new
+      design against local data; all links resolve; existing tests stay
+      green.
+- [ ] **9.5 Ship the human surface.** Deploy to production, set
+      `RESEND_API_KEY` if Tom provides one (else OTP stays dev-logged and
+      this notes it), and verify on the production domain: OTP sign-in,
+      key creation, key works against `/v1/agents/me`, landing page renders.
+      _Accepts:_ live production walkthrough recorded in the note.
