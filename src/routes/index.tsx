@@ -3,10 +3,10 @@ import { createServerFn } from '@tanstack/react-start'
 
 import {
   CHANGE_STYLES,
+  Figure,
   STATUS_DOT,
   SiteFooter,
   SiteNav,
-  Terminal,
 } from '#/components/site.tsx'
 import type { ServiceStatus } from '#/server/status.ts'
 
@@ -64,16 +64,23 @@ export function timeAgo(epochSeconds: number | null): string {
   return `${String(Math.round(delta / 86_400))}d ago`
 }
 
-const HERO_SCHEMA = `{
-  "type": "object",
-  "required": ["model", "max_tokens", "messages"],
-  "properties": {
-    "model":      { "type": "string" },
-    "max_tokens": { "type": "integer", "minimum": 1 },
-    "messages":   { "$ref": "#/$defs/InputMessage" }
-  },
-  "$defs": { … }
-}`
+function SectionRule({ title, aside }: { title: string; aside?: string }) {
+  return (
+    <div className="rule-heavy flex items-baseline justify-between gap-4 pb-2">
+      <h2 className="overline-label !text-ink">
+        <span aria-hidden className="mr-2 text-press">
+          §
+        </span>
+        {title}
+      </h2>
+      {aside ? (
+        <span className="hidden font-mono text-xs text-ink-faint sm:block">
+          {aside}
+        </span>
+      ) : null}
+    </div>
+  )
+}
 
 function Landing() {
   const { status, changes } = Route.useLoaderData()
@@ -90,65 +97,44 @@ function Landing() {
     <div className="min-h-screen text-ink">
       <SiteNav />
 
-      {/* hero */}
-      <header className="mx-auto grid max-w-6xl gap-10 px-5 pt-16 pb-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:pt-24">
-        <div className="space-y-6">
-          <p className="fade-up font-mono text-xs tracking-[0.3em] text-phosphor uppercase">
-            ● live · refreshed every 15 minutes
+      {/* front page */}
+      <header className="mx-auto max-w-6xl px-5 pt-14 pb-10 lg:pt-20">
+        <p className="fade-up flex items-center gap-2 font-mono text-xs text-ink-soft">
+          <span className="pulse-dot bg-live" />
+          live · model lists every 15 minutes · full specs daily
+        </p>
+        <h1 className="fade-up fade-up-1 mt-5 max-w-4xl font-display text-[2.9rem] leading-[1.02] font-medium tracking-tight sm:text-6xl lg:text-7xl">
+          Live AI model schemas<span className="text-press">.</span>
+        </h1>
+        <div className="fade-up fade-up-2 mt-7 grid gap-8 lg:grid-cols-[1.2fr_1fr]">
+          <p className="max-w-xl text-[15px] leading-relaxed text-ink-soft">
+            Which models exist right now, and what their payloads look like.
+            Request/response JSON Schemas for {status.providers.length}{' '}
+            providers, served as plain JSON.
           </p>
-          <h1 className="fade-up fade-up-1 font-display text-5xl leading-[1.02] text-ink-bright sm:text-6xl lg:text-7xl">
-            Live AI model schemas,
-            <br />
-            <em className="text-phosphor">as they exist right now.</em>
-          </h1>
-          <p className="fade-up fade-up-2 max-w-xl text-base leading-relaxed">
-            Which models can you call this minute — and what exactly do their
-            request and response payloads look like? modelschemas watches{' '}
-            {status.providers.length} providers, content-hashes every endpoint
-            schema, and serves the lot as plain JSON. Built for agents; humans
-            tolerated.
-          </p>
-          <div className="fade-up fade-up-3 flex flex-wrap gap-3 font-mono text-sm">
+          <div className="flex flex-wrap items-start gap-3 font-mono text-sm">
             <a
               href="/v1/models"
-              className="rounded border border-phosphor/60 bg-phosphor/10 px-4 py-2 text-phosphor transition hover:bg-phosphor/20"
+              className="border border-ink bg-ink px-4 py-2 text-paper transition-colors hover:bg-press hover:border-press"
             >
               GET /v1/models
             </a>
             <a
               href="/docs"
-              className="hairline rounded border px-4 py-2 text-ink-bright transition hover:border-phosphor/60 hover:text-phosphor"
+              className="hairline border px-4 py-2 transition-colors hover:border-ink"
             >
               read the docs
             </a>
-            <a
-              href="/account"
-              className="px-2 py-2 text-ink-dim underline-offset-4 transition hover:text-ink-bright hover:underline"
-            >
+            <a href="/account" className="press-link px-1 py-2 text-ink-soft">
               get an API key →
             </a>
           </div>
         </div>
-
-        <div className="fade-up fade-up-2 space-y-3">
-          <Terminal title="anthropic/chat · v1/messages · kind=input">
-            <pre className="text-ink">
-              <code>{HERO_SCHEMA}</code>
-            </pre>
-          </Terminal>
-          <p className="truncate font-mono text-[11px] text-ink-dim">
-            etag{' '}
-            <span className="text-phosphor-dim">
-              "817523c9788bc9ab300541d0b4af1fbf…"
-            </span>{' '}
-            · 304s honoured · stale-while-revalidate
-          </p>
-        </div>
       </header>
 
-      {/* live numbers */}
-      <section className="hairline border-y bg-panel-raised/50">
-        <div className="mx-auto grid max-w-6xl grid-cols-2 gap-px sm:grid-cols-4">
+      {/* by the numbers */}
+      <section className="hairline border-y bg-paper-raised">
+        <div className="mx-auto grid max-w-6xl grid-cols-2 sm:grid-cols-4">
           {(
             [
               ['models tracked', totals.models],
@@ -156,115 +142,112 @@ function Landing() {
               ['schema versions', totals.schemas],
               ['providers', status.providers.length],
             ] as const
-          ).map(([label, n]) => (
-            <div key={label} className="px-5 py-6">
-              <div className="font-mono text-3xl text-ink-bright tabular-nums">
+          ).map(([label, n], i) => (
+            <div
+              key={label}
+              className={`px-5 py-6 ${i > 0 ? 'hairline sm:border-l' : ''}`}
+            >
+              <div className="font-display text-4xl font-medium tabular-nums">
                 {n}
               </div>
-              <div className="mt-1 font-mono text-[10px] tracking-[0.2em] text-ink-dim uppercase">
-                {label}
-              </div>
+              <div className="overline-label mt-1">{label}</div>
             </div>
           ))}
         </div>
       </section>
 
       {/* for agents */}
-      <section className="mx-auto max-w-6xl space-y-6 px-5 py-16">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="font-display text-4xl text-ink-bright">
-            For agents<em className="text-phosphor">.</em>
-          </h2>
-          <p className="hidden font-mono text-xs text-ink-dim sm:block">
-            no signup for reads · 60 req/h anonymous · 5k with a key
-          </p>
-        </div>
+      <section className="mx-auto max-w-6xl space-y-6 px-5 py-14">
+        <SectionRule
+          title="For agents"
+          aside="no signup for reads · 60 req/h anonymous · 5k with a key"
+        />
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Terminal title="catalog + schema, raw http">
+        <div className="grid gap-5 md:grid-cols-2">
+          <Figure title="catalog + schema, raw http">
             <pre className="whitespace-pre-wrap">
               <code>
-                <span className="text-phosphor">$</span>{' '}
+                <span className="text-press">$</span>{' '}
                 {
                   'curl https://modelschemas.com/v1/models?activity=chat&q=claude'
                 }
                 {'\n'}
-                <span className="text-phosphor">$</span>{' '}
+                <span className="text-press">$</span>{' '}
                 {
                   'curl https://modelschemas.com/v1/schemas/anthropic/chat/v1%2Fmessages'
                 }
               </code>
             </pre>
-          </Terminal>
+          </Figure>
 
-          <Terminal title="validate before you spend tokens">
+          <Figure title="validate before you spend tokens">
             <pre className="whitespace-pre-wrap">
               <code>
-                <span className="text-phosphor">$</span>{' '}
+                <span className="text-press">$</span>{' '}
                 {'curl -X POST https://modelschemas.com/v1/validate \\'}
                 {'\n    '}
                 {`-d '{"provider":"anthropic","endpointId":"v1/messages","payload":{…}}'`}
                 {'\n'}
-                <span className="text-ink-dim">
+                <span className="text-ink-faint">
                   {`→ {"valid":false,"errors":[{"path":"#","keyword":"required",…}]}`}
                 </span>
               </code>
             </pre>
-          </Terminal>
+          </Figure>
 
-          <Terminal title="mcp · streamable http">
+          <Figure title="mcp · streamable http">
             <pre className="whitespace-pre-wrap">
               <code>
                 endpoint:{' '}
-                <span className="text-amber">https://modelschemas.com/mcp</span>
+                <span className="text-press-deep">
+                  https://modelschemas.com/mcp
+                </span>
                 {'\n'}
                 tools: list_models · get_model · get_schema · validate_payload ·
                 recent_changes
               </code>
             </pre>
-          </Terminal>
+          </Figure>
 
-          <Terminal title="discovery + skill install">
+          <Figure title="discovery + skill install">
             <pre className="whitespace-pre-wrap">
               <code>
-                <a className="text-amber hover:underline" href="/llms.txt">
+                <a className="press-link" href="/llms.txt">
                   /llms.txt
                 </a>{' '}
                 — agent guide{'\n'}
                 <a
-                  className="text-amber hover:underline"
+                  className="press-link"
                   href="/.well-known/agent-configuration"
                 >
                   /.well-known/agent-configuration
                 </a>{' '}
                 — agent-auth{'\n'}
-                <a className="text-amber hover:underline" href="/skill">
+                <a className="press-link" href="/skill">
                   /skill
                 </a>{' '}
                 — drop into .claude/skills/
               </code>
             </pre>
-          </Terminal>
+          </Figure>
         </div>
       </section>
 
       {/* providers */}
-      <section className="mx-auto max-w-6xl space-y-4 px-5 pb-16">
-        <h2 className="font-display text-4xl text-ink-bright">
-          Providers<em className="text-phosphor">.</em>
-        </h2>
-        <div className="terminal">
+      <section className="mx-auto max-w-6xl space-y-5 px-5 pb-14">
+        <SectionRule title="Providers" />
+        <div className="figure">
           <table className="w-full font-mono text-[13px]">
             <thead>
-              <tr className="hairline border-b text-left text-[10px] tracking-[0.2em] text-ink-dim uppercase">
-                <th className="px-4 py-2 font-medium">provider</th>
-                <th className="px-4 py-2 font-medium">status</th>
-                <th className="px-4 py-2 text-right font-medium">models</th>
-                <th className="px-4 py-2 text-right font-medium">schemas</th>
-                <th className="hidden px-4 py-2 text-right font-medium sm:table-cell">
+              <tr className="figure-caption text-left">
+                <th className="px-4 py-2 font-semibold">provider</th>
+                <th className="px-4 py-2 font-semibold">status</th>
+                <th className="px-4 py-2 text-right font-semibold">models</th>
+                <th className="px-4 py-2 text-right font-semibold">schemas</th>
+                <th className="hidden px-4 py-2 text-right font-semibold sm:table-cell">
                   polled
                 </th>
-                <th className="hidden px-4 py-2 text-right font-medium sm:table-cell">
+                <th className="hidden px-4 py-2 text-right font-semibold sm:table-cell">
                   synced
                 </th>
               </tr>
@@ -272,9 +255,9 @@ function Landing() {
             <tbody>
               {status.providers.map((p) => (
                 <tr key={p.id} className="hairline border-b last:border-0">
-                  <td className="px-4 py-2.5 text-ink-bright">
+                  <td className="px-4 py-2.5 font-medium">
                     <a
-                      className="hover:text-phosphor"
+                      className="press-link"
                       href={`/v1/providers/${p.id}/models`}
                     >
                       {p.displayName}
@@ -283,7 +266,7 @@ function Landing() {
                   <td className="px-4 py-2.5">
                     <span className="inline-flex items-center gap-2">
                       <span
-                        className={`pulse-dot ${STATUS_DOT[p.status] ?? 'bg-ink-dim'}`}
+                        className={`pulse-dot ${STATUS_DOT[p.status] ?? 'bg-ink-faint'}`}
                       />
                       <span className="text-xs">{p.status}</span>
                     </span>
@@ -294,10 +277,10 @@ function Landing() {
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     {p.counts.schemas}
                   </td>
-                  <td className="hidden px-4 py-2.5 text-right text-ink-dim sm:table-cell">
+                  <td className="hidden px-4 py-2.5 text-right text-ink-faint sm:table-cell">
                     {timeAgo(p.lastPolledAt)}
                   </td>
-                  <td className="hidden px-4 py-2.5 text-right text-ink-dim sm:table-cell">
+                  <td className="hidden px-4 py-2.5 text-right text-ink-faint sm:table-cell">
                     {timeAgo(p.lastSyncedAt)}
                   </td>
                 </tr>
@@ -308,37 +291,27 @@ function Landing() {
       </section>
 
       {/* change log */}
-      <section className="mx-auto max-w-6xl space-y-4 px-5 pb-20">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="font-display text-4xl text-ink-bright">
-            Just changed<em className="text-phosphor">.</em>
-          </h2>
-          <a
-            className="font-mono text-xs text-ink-dim hover:text-phosphor"
-            href="/v1/changes"
-          >
-            /v1/changes →
-          </a>
-        </div>
+      <section className="mx-auto max-w-6xl space-y-5 px-5 pb-20">
+        <SectionRule title="Just changed" aside="GET /v1/changes" />
         {changes.length === 0 ? (
-          <p className="font-mono text-sm text-ink-dim">
+          <p className="font-mono text-sm text-ink-faint">
             no changes yet — the next cron poll will populate this feed.
           </p>
         ) : (
-          <div className="terminal px-4 py-3">
+          <div className="figure px-4 py-3">
             <ol className="space-y-1.5 font-mono text-[13px]">
               {changes.map((change) => (
                 <li key={change.id} className="flex items-baseline gap-3">
-                  <span className="shrink-0 text-ink-dim">
+                  <span className="shrink-0 text-ink-faint">
                     {timeAgo(change.createdAt)}
                   </span>
                   <span
-                    className={`shrink-0 ${CHANGE_STYLES[change.type] ?? 'text-ink'}`}
+                    className={`shrink-0 ${CHANGE_STYLES[change.type] ?? 'text-ink-soft'}`}
                   >
                     {change.type}
                   </span>
-                  <span className="truncate text-ink">{change.summary}</span>
-                  <span className="ml-auto hidden shrink-0 text-ink-dim sm:inline">
+                  <span className="truncate">{change.summary}</span>
+                  <span className="ml-auto hidden shrink-0 text-ink-faint sm:inline">
                     {change.providerId}
                   </span>
                 </li>

@@ -46,24 +46,23 @@ function Login() {
       setError(signInError.message ?? 'Invalid code.')
       return
     }
-    // /account lands in task 9.3; refresh session state in place for now.
     await router.invalidate()
   }
 
   const inputClasses =
-    'hairline w-full rounded border bg-panel-raised px-3 py-2 font-mono text-sm text-ink-bright outline-none transition focus:border-phosphor/60'
+    'hairline w-full border bg-paper-raised px-3 py-2 font-mono text-sm text-ink outline-none transition-colors focus:border-ink'
   const buttonClasses =
-    'w-full rounded border border-phosphor/60 bg-phosphor/10 px-3 py-2 font-mono text-sm text-phosphor transition hover:bg-phosphor/20 disabled:opacity-50'
+    'w-full border border-ink bg-ink px-3 py-2 font-mono text-sm text-paper transition-colors hover:bg-press hover:border-press disabled:opacity-50'
 
   return (
     <div className="min-h-screen text-ink">
-      <SiteNav />
+      <SiteNav active="sign in" />
       <div className="mx-auto max-w-sm space-y-6 px-5 py-16">
         <header className="space-y-2">
-          <h1 className="font-display text-4xl text-ink-bright">
-            Sign in<em className="text-phosphor">.</em>
+          <h1 className="font-display text-5xl font-medium tracking-tight">
+            Sign in<span className="text-press">.</span>
           </h1>
-          <p className="text-sm">
+          <p className="text-sm text-ink-soft">
             Manage your API keys. We email you a one-time code — no password.
           </p>
         </header>
@@ -74,10 +73,7 @@ function Login() {
               Signed in as{' '}
               <span className="font-medium">{session.user.email}</span>
             </p>
-            <a
-              className="text-phosphor underline-offset-4 hover:underline"
-              href="/account"
-            >
+            <a className="press-link text-press" href="/account">
               Manage API keys →
             </a>
             <button
@@ -116,7 +112,7 @@ function Login() {
               void verifyCode(event)
             }}
           >
-            <p className="text-sm text-ink-dim">
+            <p className="text-sm text-ink-soft">
               Enter the 6-digit code sent to{' '}
               <span className="font-medium">{email}</span>.
             </p>
@@ -135,7 +131,7 @@ function Login() {
             </button>
             <button
               type="button"
-              className="w-full font-mono text-xs text-ink-dim underline underline-offset-4 hover:text-ink"
+              className="press-link w-full font-mono text-xs text-ink-faint"
               onClick={() => setStep('email')}
             >
               Use a different email
@@ -143,9 +139,7 @@ function Login() {
           </form>
         )}
 
-        {error ? (
-          <p className="font-mono text-sm text-signal-red">{error}</p>
-        ) : null}
+        {error ? <p className="font-mono text-sm text-press">{error}</p> : null}
       </div>
       <SiteFooter />
     </div>

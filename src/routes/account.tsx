@@ -76,7 +76,7 @@ function Account() {
   }
 
   const inputClasses =
-    'hairline rounded border bg-panel-raised px-3 py-2 font-mono text-sm text-ink-bright outline-none transition focus:border-phosphor/60'
+    'hairline border bg-paper-raised px-3 py-2 font-mono text-sm text-ink outline-none transition-colors focus:border-ink'
 
   if (isPending) return null
   if (!session) {
@@ -84,16 +84,13 @@ function Account() {
       <div className="min-h-screen text-ink">
         <SiteNav active="account" />
         <div className="mx-auto max-w-sm space-y-4 px-5 py-16 text-sm">
-          <h1 className="font-display text-4xl text-ink-bright">
-            Account<em className="text-phosphor">.</em>
+          <h1 className="font-display text-5xl font-medium tracking-tight">
+            Account<span className="text-press">.</span>
           </h1>
-          <p className="text-ink-dim">
+          <p className="text-ink-soft">
             You need to sign in to manage API keys.
           </p>
-          <a
-            className="text-phosphor underline-offset-4 hover:underline"
-            href="/login"
-          >
+          <a className="press-link text-press" href="/login">
             Sign in with email →
           </a>
         </div>
@@ -107,18 +104,15 @@ function Account() {
       <SiteNav active="account" />
       <div className="mx-auto max-w-2xl space-y-8 px-5 py-14">
         <header className="space-y-2">
-          <h1 className="font-display text-4xl text-ink-bright">
-            Account<em className="text-phosphor">.</em>
+          <h1 className="font-display text-5xl font-medium tracking-tight">
+            Account<span className="text-press">.</span>
           </h1>
-          <p className="text-sm text-ink-dim">
-            Signed in as{' '}
-            <span className="font-mono text-ink-bright">
-              {session.user.email}
-            </span>{' '}
+          <p className="text-sm text-ink-soft">
+            Signed in as <span className="font-mono">{session.user.email}</span>{' '}
             ·{' '}
             <button
               type="button"
-              className="underline underline-offset-4"
+              className="press-link"
               onClick={() => {
                 void authClient.signOut().then(() => router.invalidate())
               }}
@@ -129,30 +123,35 @@ function Account() {
         </header>
 
         <section className="space-y-3">
-          <h2 className="font-display text-2xl text-ink-bright">API keys</h2>
-          <p className="text-sm text-ink-dim">
+          <h2 className="overline-label rule-heavy !text-ink pb-2">
+            <span aria-hidden className="mr-2 text-press">
+              §
+            </span>
+            API keys
+          </h2>
+          <p className="text-sm text-ink-soft">
             Keys unlock 5,000 requests/hour (vs 60/hour anonymous) and webhook
             subscriptions. Send them as{' '}
-            <code className="rounded bg-panel-raised px-1 text-phosphor">
+            <code className="bg-paper-raised px-1 text-press-deep">
               Authorization: Bearer &lt;key&gt;
             </code>
             .
           </p>
 
           {createdKey ? (
-            <div className="terminal space-y-2 border-phosphor/40 p-4 text-sm">
+            <div className="figure space-y-2 p-4 text-sm">
               <p className="font-medium">
                 Key created — copy it now, it is shown exactly once:
               </p>
-              <code className="block break-all rounded bg-panel px-2 py-1 text-phosphor">
+              <code className="block break-all bg-paper px-2 py-1 text-press-deep">
                 {createdKey}
               </code>
-              <pre className="overflow-x-auto rounded bg-panel px-2 py-1 text-xs text-ink">
+              <pre className="overflow-x-auto bg-paper px-2 py-1 font-mono text-xs text-ink-soft">
                 {`curl https://modelschemas.com/v1/agents/me \\\n  -H "Authorization: Bearer ${createdKey}"`}
               </pre>
               <button
                 type="button"
-                className="font-mono text-xs text-ink-dim underline underline-offset-4 hover:text-ink"
+                className="press-link font-mono text-xs text-ink-faint"
                 onClick={() => setCreatedKey(null)}
               >
                 Done, hide it
@@ -184,7 +183,7 @@ function Account() {
               ))}
             </select>
             <button
-              className="rounded border border-phosphor/60 bg-phosphor/10 px-4 py-2 font-mono text-sm text-phosphor transition hover:bg-phosphor/20 disabled:opacity-50"
+              className="border border-ink bg-ink px-4 py-2 font-mono text-sm text-paper transition-colors hover:border-press hover:bg-press disabled:opacity-50"
               disabled={busy}
               type="submit"
             >
@@ -193,28 +192,28 @@ function Account() {
           </form>
 
           {keys.length === 0 ? (
-            <p className="text-sm text-ink-dim">No keys yet.</p>
+            <p className="text-sm text-ink-faint">No keys yet.</p>
           ) : (
             <ul className="space-y-2">
               {keys.map((key) => (
                 <li
                   key={key.id}
-                  className="terminal flex items-center gap-3 px-4 py-2.5 text-sm"
+                  className="figure flex items-center gap-3 px-4 py-2.5 text-sm"
                 >
                   <span className="flex-1">
                     <span className="font-medium">{key.name ?? 'unnamed'}</span>{' '}
-                    <code className="font-mono text-xs text-ink-dim">
+                    <code className="font-mono text-xs text-ink-faint">
                       {key.start ?? '…'}…
                     </code>
                   </span>
-                  <span className="font-mono text-xs text-ink-dim">
+                  <span className="font-mono text-xs text-ink-faint">
                     {key.expiresAt
                       ? `expires ${new Date(key.expiresAt).toLocaleDateString()}`
                       : 'no expiry'}
                   </span>
                   <button
                     type="button"
-                    className="font-mono text-xs text-signal-red underline underline-offset-4"
+                    className="press-link font-mono text-xs text-press"
                     onClick={() => {
                       void revokeKey(key.id)
                     }}
@@ -227,21 +226,16 @@ function Account() {
           )}
         </section>
 
-        {error ? (
-          <p className="font-mono text-sm text-signal-red">{error}</p>
-        ) : null}
+        {error ? <p className="font-mono text-sm text-press">{error}</p> : null}
 
-        <footer className="font-mono text-xs text-ink-dim">
+        <footer className="font-mono text-xs text-ink-faint">
           Agents can self-register instead — see{' '}
-          <a
-            className="text-amber underline-offset-4 hover:underline"
-            href="/docs"
-          >
+          <a className="press-link text-ink-soft" href="/docs">
             the docs
           </a>{' '}
           or{' '}
           <a
-            className="text-amber underline-offset-4 hover:underline"
+            className="press-link text-ink-soft"
             href="/.well-known/agent-configuration"
           >
             agent discovery

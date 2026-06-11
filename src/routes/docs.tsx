@@ -24,21 +24,17 @@ function Docs() {
     <div className="min-h-screen text-ink">
       <SiteNav active="docs" />
       <div className="mx-auto max-w-3xl space-y-10 px-5 py-14">
-        <header className="space-y-3">
-          <h1 className="font-display text-5xl text-ink-bright">
-            Docs<em className="text-phosphor">.</em>
+        <header className="space-y-4">
+          <h1 className="font-display text-5xl font-medium tracking-tight">
+            Documentation<span className="text-press">.</span>
           </h1>
-          <p className="font-mono text-xs text-ink-dim">
+          <p className="font-mono text-xs text-ink-faint">
             rendered from the exact /llms.txt agents fetch — zero drift by
             construction.
           </p>
-          <nav className="flex flex-wrap gap-x-5 gap-y-1 font-mono text-xs">
+          <nav className="hairline flex flex-wrap gap-x-5 gap-y-1.5 border-y py-2.5 font-mono text-xs">
             {LINKS.map(([label, href]) => (
-              <a
-                key={href}
-                className="text-ink underline-offset-4 hover:text-phosphor hover:underline"
-                href={href}
-              >
+              <a key={href} className="press-link text-ink-soft" href={href}>
                 {label}
               </a>
             ))}
@@ -47,7 +43,7 @@ function Docs() {
 
         {/* Rendered from the exact llms.txt source so the human docs can never
             drift from what agents read. */}
-        <article className="prose prose-invert prose-zinc max-w-none prose-headings:font-display prose-headings:font-normal prose-headings:text-ink-bright prose-code:text-phosphor prose-a:text-amber prose-li:marker:text-phosphor-dim">
+        <article className="prose max-w-none prose-headings:font-display prose-headings:font-medium prose-headings:text-ink prose-p:text-ink-soft prose-li:text-ink-soft prose-strong:text-ink prose-code:text-press-deep prose-a:text-press prose-li:marker:text-press">
           <Streamdown>{llmsTxt}</Streamdown>
         </article>
       </div>
