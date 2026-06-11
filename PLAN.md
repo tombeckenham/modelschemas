@@ -290,10 +290,14 @@ Rules:
     deterministic). Result carries fetchedAt/staleAt/revalidating for task 3.2's
     header helper. Failed background revalidation records cache_meta.lastError and
     keeps serving the stale value. 6 worker tests.
-- [ ] **3.2 HTTP cache semantics.** Response helper adding `ETag` (content hash),
+- [x] **3.2 HTTP cache semantics.** Response helper adding `ETag` (content hash),
       `Last-Modified`, `Cache-Control: public, max-age=60, stale-while-revalidate=600`,
       `X-Fetched-At`, `X-Stale-At`; honour `If-None-Match` → 304. Apply to all schema/model
       read endpoints in Phase 4. _Accepts:_ test asserts 304 on matching ETag.
+  - Note: `cachedJson(request, value, opts)` in src/server/http-cache.ts — etag
+    computed from the body unless a stored content hash is passed; If-None-Match
+    handles lists, weak validators, and `*`. X-Fetched-At/X-Stale-At are epoch
+    seconds, matching SwrResult from 3.1.
 
 ## Phase 4 — Public API (agent-first)
 
