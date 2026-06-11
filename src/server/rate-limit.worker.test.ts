@@ -64,6 +64,7 @@ describe('enforceRateLimit (acceptance: anonymous window exhaustion)', () => {
     for (let i = 0; i < ANONYMOUS_LIMIT.limit; i++) {
       const limited = await enforceRateLimit(
         auth,
+        getDb(env),
         env.SCHEMA_CACHE,
         anonRequest(ip),
         NOW + i,
@@ -73,6 +74,7 @@ describe('enforceRateLimit (acceptance: anonymous window exhaustion)', () => {
 
     const limited = await enforceRateLimit(
       auth,
+      getDb(env),
       env.SCHEMA_CACHE,
       anonRequest(ip),
       NOW + 100,
@@ -87,6 +89,7 @@ describe('enforceRateLimit (acceptance: anonymous window exhaustion)', () => {
     // A different IP is unaffected.
     const other = await enforceRateLimit(
       auth,
+      getDb(env),
       env.SCHEMA_CACHE,
       anonRequest('198.51.100.8'),
       NOW + 100,
@@ -99,10 +102,22 @@ describe('enforceRateLimit (acceptance: anonymous window exhaustion)', () => {
     const ip = '198.51.100.9'
     // Exhaust the anonymous bucket for this IP.
     for (let i = 0; i < ANONYMOUS_LIMIT.limit; i++) {
-      await enforceRateLimit(auth, env.SCHEMA_CACHE, anonRequest(ip), NOW + i)
+      await enforceRateLimit(
+        auth,
+        getDb(env),
+        env.SCHEMA_CACHE,
+        anonRequest(ip),
+        NOW + i,
+      )
     }
     expect(
-      await enforceRateLimit(auth, env.SCHEMA_CACHE, anonRequest(ip), NOW + 99),
+      await enforceRateLimit(
+        auth,
+        getDb(env),
+        env.SCHEMA_CACHE,
+        anonRequest(ip),
+        NOW + 99,
+      ),
     ).not.toBeNull()
 
     // Same IP with a valid API key: separate authenticated bucket → allowed.
@@ -118,7 +133,114 @@ describe('enforceRateLimit (acceptance: anonymous window exhaustion)', () => {
       },
     })
     expect(
-      await enforceRateLimit(auth, env.SCHEMA_CACHE, keyed, NOW + 99),
+      await enforceRateLimit(
+        auth,
+        getDb(env),
+        env.SCHEMA_CACHE,
+        keyed,
+        NOW + 99,
+      ),
+    ).toBeNull()
+  })
+})
+
+describe('agent JWT buckets (signature-verified, no jti consumption)', () => {
+  it('forged JWTs never upgrade past the anonymous IP bucket', async () => {
+    const auth = makeAuth()
+    const ip = '198.51.100.20'
+    const forged = (sub: string) => {
+      const b64 = (value: object) =>
+        btoa(JSON.stringify(value))
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '')
+      return `${b64({ alg: 'EdDSA', typ: 'agent+jwt' })}.${b64({ sub })}.AAAA`
+    }
+
+    // Exhaust the IP window using forged JWTs with ROTATING subs — if
+    // unverified claims granted authenticated buckets, this would never 429.
+    for (let i = 0; i < ANONYMOUS_LIMIT.limit; i++) {
+      const request = new Request('http://rl.test/v1/models', {
+        headers: {
+          'cf-connecting-ip': ip,
+          authorization: `Bearer ${forged(`spoof-${String(i)}`)}`,
+        },
+      })
+      await enforceRateLimit(
+        auth,
+        getDb(env),
+        env.SCHEMA_CACHE,
+        request,
+        NOW + i,
+      )
+    }
+    const final = new Request('http://rl.test/v1/models', {
+      headers: {
+        'cf-connecting-ip': ip,
+        authorization: `Bearer ${forged('spoof-final')}`,
+      },
+    })
+    const limited = await enforceRateLimit(
+      auth,
+      getDb(env),
+      env.SCHEMA_CACHE,
+      final,
+      NOW + 99,
+    )
+    expect(limited?.status).toBe(429)
+  })
+
+  it('a properly signed agent JWT gets the authenticated bucket', async () => {
+    const { SignJWT, exportJWK, generateKeyPair } = await import('jose')
+    const db = getDb(env)
+    const auth = makeAuth()
+
+    const keys = await generateKeyPair('Ed25519', { extractable: true })
+    const { agent, agentHost } = await import('../db/schema.ts')
+    await db.insert(agentHost).values({
+      id: 'rl-host',
+      name: 'rl host',
+      status: 'active',
+      createdAt: new Date(NOW * 1000),
+      updatedAt: new Date(NOW * 1000),
+    })
+    await db.insert(agent).values({
+      id: 'rl-agent',
+      name: 'rl agent',
+      mode: 'autonomous',
+      status: 'active',
+      publicKey: JSON.stringify(await exportJWK(keys.publicKey)),
+      hostId: 'rl-host',
+      createdAt: new Date(NOW * 1000),
+      updatedAt: new Date(NOW * 1000),
+    })
+
+    const jwt = await new SignJWT({ aud: 'http://rl.test/api/auth' })
+      .setProtectedHeader({ alg: 'EdDSA', typ: 'agent+jwt' })
+      .setIssuer('rl-host')
+      .setSubject('rl-agent')
+      .setIssuedAt()
+      .setJti(crypto.randomUUID())
+      .setExpirationTime('2m')
+      .sign(keys.privateKey)
+
+    const ip = '198.51.100.21'
+    // Exhaust the IP bucket first.
+    for (let i = 0; i < ANONYMOUS_LIMIT.limit; i++) {
+      await enforceRateLimit(
+        auth,
+        db,
+        env.SCHEMA_CACHE,
+        anonRequest(ip),
+        NOW + i,
+      )
+    }
+    // The signed JWT rides its own authenticated bucket → still allowed.
+    const request = new Request('http://rl.test/v1/models', {
+      headers: { 'cf-connecting-ip': ip, authorization: `Bearer ${jwt}` },
+    })
+    expect(
+      await enforceRateLimit(auth, db, env.SCHEMA_CACHE, request),
     ).toBeNull()
   })
 })

@@ -406,8 +406,13 @@ discovery → register → request capability grants → execute with short-live
     verification would consume the replay-protected jti before the route's own auth.
     Eventual-consistency drift accepted (abuse mitigation, not billing). Acceptance
     test exhausts 60 anon requests → 429 with Retry-After; keyed bucket independent.
-- [ ] **5.5 Usage endpoint.** `GET /v1/agents/me` — agent identity, grants, limits,
+- [x] **5.5 Usage endpoint.** `GET /v1/agents/me` — agent identity, grants, limits,
       current usage. _Accepts:_ curl with agent JWT and with API key.
+  - Note: usage reads the live KV rate counter (non-incrementing readRateUsage).
+    Curl-verified with both credential types. Also hardened 5.4 per security review:
+    agent JWT buckets now require a signature+expiry check against the agent's stored
+    key (jti untouched) — forged subs can no longer mint 5k/h windows (tested with
+    rotating spoofed subs).
 
 ## Phase 6 — Push notifications
 

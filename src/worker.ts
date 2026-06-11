@@ -43,6 +43,7 @@ export default {
     ) {
       const limited = await enforceRateLimit(
         getAuth(),
+        getDb(env),
         env.SCHEMA_CACHE,
         request,
       )

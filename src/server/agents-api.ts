@@ -4,10 +4,13 @@
  * API key (returned exactly once).
  */
 import { eq } from 'drizzle-orm'
+import type { KVNamespace } from '@cloudflare/workers-types'
 
 import type { Db } from '#/db/index.ts'
 import { user } from '#/db/schema.ts'
 import type { Auth } from '#/lib/auth.ts'
+import { requireAgent } from '#/server/require-agent.ts'
+import { AUTHENTICATED_LIMIT, readRateUsage } from '#/server/rate-limit.ts'
 
 export interface RegisterKeyBody {
   name: string
@@ -99,4 +102,42 @@ export async function registerKeyAgent(
       note: 'Store this key now — it is shown exactly once. Send it as Authorization: Bearer <key>.',
     },
   }
+}
+
+/** GET /v1/agents/me (task 5.5): identity, grants, limits, current usage. */
+export async function agentsMe(
+  auth: Auth,
+  kv: KVNamespace,
+  request: Request,
+): Promise<Response> {
+  const result = await requireAgent(auth, request)
+  if (!result.ok) return result.response
+
+  const principal = result.principal
+  const bucket =
+    principal.kind === 'agent'
+      ? `agent:${principal.agentId}`
+      : `key:${principal.keyId}`
+  const usage = await readRateUsage(
+    kv,
+    bucket,
+    AUTHENTICATED_LIMIT.limit,
+    AUTHENTICATED_LIMIT.windowSeconds,
+  )
+
+  return Response.json({
+    agent: principal,
+    grants: principal.capabilities,
+    limits: {
+      requestsPerHour: AUTHENTICATED_LIMIT.limit,
+      anonymousRequestsPerHour: 60,
+    },
+    usage,
+    _links: {
+      self: '/v1/agents/me',
+      capabilities: '/api/auth/capability/list',
+      changes: '/v1/changes',
+      subscriptions: '/v1/subscriptions',
+    },
+  })
 }

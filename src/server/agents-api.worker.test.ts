@@ -98,3 +98,44 @@ describe('registerKeyAgent + API-key requireAgent', () => {
     expect(parseRegisterKeyBody({ name: 'x', email: 5 })).toBeNull()
   })
 })
+
+describe('agentsMe (task 5.5)', () => {
+  it('reports identity, grants, limits, and usage for an API key', async () => {
+    const { agentsMe } = await import('./agents-api.ts')
+    const auth = makeAuth()
+    const registered = await registerKeyAgent(auth, getDb(env), {
+      name: 'Me Agent',
+    })
+    expect(registered.ok).toBe(true)
+    if (!registered.ok) return
+
+    const response = await agentsMe(
+      auth,
+      env.SCHEMA_CACHE,
+      keyedRequest({ authorization: `Bearer ${registered.result.key}` }),
+    )
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as {
+      agent: { kind: string; userId: string }
+      grants: Array<string>
+      limits: { requestsPerHour: number }
+      usage: { limit: number; remaining: number; resetAt: number }
+    }
+    expect(body.agent.kind).toBe('api-key')
+    expect(body.agent.userId).toBe(registered.result.userId)
+    expect(body.grants).toContain('getSchema')
+    expect(body.limits.requestsPerHour).toBe(5000)
+    expect(body.usage.limit).toBe(5000)
+    expect(body.usage.resetAt).toBeGreaterThan(0)
+  })
+
+  it('401s without credentials', async () => {
+    const { agentsMe } = await import('./agents-api.ts')
+    const response = await agentsMe(
+      makeAuth(),
+      env.SCHEMA_CACHE,
+      keyedRequest({}),
+    )
+    expect(response.status).toBe(401)
+  })
+})
