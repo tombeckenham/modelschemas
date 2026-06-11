@@ -679,7 +679,7 @@ rel="service-doc"`, `</llms.txt>; rel="describedby"`. _Accepts:_ curl -I
       quickstart + live links); browsers keep HTML. The audit saw a 500 —
       must return 200. _Accepts:_ curl with the Accept header gets markdown
       200s on `/`, `/docs`; plain requests still get HTML.
-- [ ] **10.6 WebMCP.** On the landing page, feature-detect
+- [x] **10.6 WebMCP.** On the landing page, feature-detect
       `navigator.modelContext` and `provideContext()` with tools wrapping the
       public API: `list_models`, `get_schema`, `validate_payload` (fetch
       wrappers with JSON Schema inputs). No-op when the API is absent.

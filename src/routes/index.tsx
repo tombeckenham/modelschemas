@@ -1,5 +1,8 @@
+import { useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+
+import { registerWebMcp } from '#/lib/webmcp.ts'
 
 import {
   CHANGE_STYLES,
@@ -84,6 +87,11 @@ function SectionRule({ title, aside }: { title: string; aside?: string }) {
 
 function Landing() {
   const { status, changes } = Route.useLoaderData()
+  // WebMCP (task 10.6): in-page tools for browsers that ship
+  // navigator.modelContext; silently absent everywhere else.
+  useEffect(() => {
+    registerWebMcp()
+  }, [])
   const totals = status.providers.reduce(
     (acc, p) => ({
       models: acc.models + p.counts.models,
