@@ -692,3 +692,35 @@ rel="service-doc"`, `</llms.txt>; rel="describedby"`. _Accepts:_ curl -I
       surface on https://modelschemas.com. _Accepts:_ production curls for
       10.1–10.5 all pass; DNS-AID either resolves or is marked BLOCKED with
       exact records for Tom.
+
+## Phase 11 — Agents API ergonomics (Tom, 2026-06-11)
+
+Agents consume APIs differently from programmers. Keep the DX surface
+(`/openapi.json`, typed client) separate from the agent experience (AX)
+surface; these tasks build the AX layer.
+
+- [ ] **11.1 HAL self-description.** Add `_links` (HAL) to `/v1` and every
+      `/v1/*` JSON read response, extended per link with `method`,
+      `contentType`, and an inline `example` (HAL doesn't carry these —
+      agents need them). Keep payload shapes backwards-compatible (additive
+      only); document the extension in llms.txt. _Accepts:_ `GET /v1` and
+      `GET /v1/models` responses carry `_links` whose hrefs all resolve 200
+      locally (worker test walks them); openapi.json regenerated without
+      breaking `check:client`.
+- [ ] **11.2 Narrative API root.** Make a JSON-accepting `GET /`
+      (`Accept: application/json`, plus the `GET /v1` self link) return the equivalent of
+      MCP default instructions: narrative description, workflow, inline
+      examples, and HAL links — the same content an MCP `initialize`
+      instructions field would carry, generated from the llms.txt source.
+      _Accepts:_ JSON `GET /` returns the narrative document with `_links`;
+      HTML browsers still get the landing page; MCP initialize instructions
+      and the root narrative share one source.
+- [ ] **11.3 `?wait=` long-poll.** Support `?wait=<seconds>` (cap 60s, also
+      accepts `60s` form) on `/v1/changes` and `/v1/status`: hold the
+      request until new data exists or the window expires (poll D1 every
+      ~2s), returning whatever is current at expiry. Agents rarely have a
+      sleep tool — this gives them one. Document on the endpoints + llms.txt;
+      ensure Workers runtime limits are respected (use ctx.waitUntil-safe
+      timers within the request, no cron dependency). _Accepts:_ worker test
+      proves `?wait=2` returns early when a change lands mid-wait and at
+      ~wait expiry otherwise; rate limiter counts the call once.
