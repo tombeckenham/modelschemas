@@ -13,6 +13,7 @@ import type { ProviderSecrets } from '#/server/providers/types.ts'
 import { enforceRateLimit } from '#/server/rate-limit.ts'
 import { pollAllProviders } from '#/server/ingest/poll-models.ts'
 import { syncAllProviders } from '#/server/ingest/sync.ts'
+import { runWebhookTick } from '#/server/webhooks.ts'
 import type { SyncDeps } from '#/server/ingest/sync.ts'
 
 // Not exported: workerd treats named exports of the entry module as
@@ -66,9 +67,17 @@ export default {
     switch (controller.cron) {
       case MODELS_POLL_CRON:
         ctx.waitUntil(
-          pollAllProviders(syncDeps(env)).then((outcomes) => {
-            console.log(JSON.stringify({ job: 'models-poll', outcomes }))
-          }),
+          pollAllProviders(syncDeps(env))
+            .then((outcomes) => {
+              console.log(JSON.stringify({ job: 'models-poll', outcomes }))
+              // The 15-min cron also drains the webhook queue (task 6.2).
+              return runWebhookTick(getDb(env))
+            })
+            .then(({ enqueued, outcomes }) => {
+              console.log(
+                JSON.stringify({ job: 'webhooks', enqueued, outcomes }),
+              )
+            }),
         )
         break
       case SPEC_SYNC_CRON:

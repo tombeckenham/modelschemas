@@ -423,12 +423,17 @@ discovery → register → request capability grants → execute with short-live
     identities are materialised as user rows on first write (FK integrity); 10
     subscriptions/owner cap; whsec*-prefixed 32-byte secrets; list never echoes
     secrets; ownership enforced on delete. Live curl round-trip verified.
-- [ ] **6.2 Webhook delivery.** On new `changes` rows, enqueue `webhook_deliveries`;
+- [x] **6.2 Webhook delivery.** On new `changes` rows, enqueue `webhook_deliveries`;
       deliver via `ctx.waitUntil` with HMAC-SHA256 signature header
       (`X-ModelSchemas-Signature`), JSON body `{ event, change, _links }`. Failures →
       exponential backoff via `nextAttemptAt`, drained by the 15-min cron; 8 failures →
       subscription auto-paused + recorded. _Accepts:_ integration test with a local
       receiver route capturing the signed payload.
+  - Note: fan-out runs off a cache_meta checkpoint (changes.createdAt high-water mark)
+    so enqueue is idempotent without coupling sync/poll code; the 15-min cron runs
+    runWebhookTick (enqueue + drain) inside the same waitUntil as the poll. Backoff is
+    60s·2^attempt; signature is `sha256=<hex HMAC>` over the exact body, verified by
+    recomputation in the receiver test. Injectable fetcher = the "local receiver".
 
 ## Phase 7 — Clients, MCP + DX polish
 
