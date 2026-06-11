@@ -225,13 +225,18 @@ Rules:
     OpenRouter's video synthesis + embeddings lift ported as exported, unit-tested
     helpers; Anthropic's resolved spec URL doubles as specRevision. `yaml` dep added
     for OpenAI/Anthropic YAML specs.
-- [ ] **2.2 Schema extraction + bundling.** `src/server/ingest/bundle.ts`: given a
+- [x] **2.2 Schema extraction + bundling.** `src/server/ingest/bundle.ts`: given a
       merged OpenAPI spec and an endpoint, extract the input schema (request body —
       handle `application/json` and `multipart/form-data`, per the PR's multipart fix)
       and output schema (`post-200` strategy, plus FAL's `sibling-get`), then inline the
       `$ref` closure under `$defs` so every schema is self-contained. Stable
       stringify → SHA-256 content hash. _Accepts:_ unit tests with fixture specs prove
       self-containment (no dangling `$ref`s — port the PR's dedup-rename lesson as a test).
+  - Note: content hashing reuses `stableStringify`/`contentHash` from src/server/kv.ts
+    (task 0.3). Improvement over the PR: refs back to the root schema rewrite to `#`
+    instead of dangling in $defs; `findDanglingRefs` exported as the self-containment
+    checker (used by tests, reusable as a sync-time sanity check). Inline (ref-less)
+    body schemas are bundled too, not skipped.
 - [ ] **2.3 Sync engine.** `src/server/ingest/sync.ts`: per provider —
       fetch spec → classify endpoints → bundle schemas → diff content hashes against
       `schema_versions` → insert new versions, mark superseded, upsert `endpoints`,
