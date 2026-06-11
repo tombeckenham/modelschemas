@@ -630,3 +630,62 @@ The production domain is **modelschemas.com**.
       the key authenticating `/v1/agents/me`, and the redesigned landing
       page rendering. \_Accepts:* live production walkthrough recorded in
       the note.
+
+## Phase 10 — Agent-readiness audit (isitagentready.com)
+
+Tom pasted the audit 2026-06-11. Fixes target https://modelschemas.com; each
+lands as a route/header served by the worker so they stay correct on every
+deploy. Re-verify on production at the end.
+
+- [ ] **10.1 Sitemap + robots.** `GET /sitemap.xml` (canonical pages: `/`,
+      `/docs`, `/login`, `/account`, plus `/llms.txt`, `/openapi.json`,
+      `/skill`), generated dynamically (origin from BETTER*AUTH_URL, lastmod
+      from the latest change row) so it is always current on publish;
+      `GET /robots.txt` allowing all and referencing the sitemap. \_Accepts:*
+      both render locally with correct content types; sitemap validates
+      against the sitemaps.org shape (urlset/url/loc).
+- [ ] **10.2 Link headers (RFC 8288).** Add `Link` response headers on HTML
+      pages (via the worker fetch wrapper): `</.well-known/api-catalog>;
+rel="api-catalog"`, `</openapi.json>; rel="service-desc"`, `</docs>;
+rel="service-doc"`, `</llms.txt>; rel="describedby"`. _Accepts:_ curl -I
+      of `/` shows the Link header; JSON endpoints unaffected.
+- [ ] **10.3 Discovery trio.** `/.well-known/api-catalog`
+      (`application/linkset+json` per RFC 9727: anchor + service-desc/
+      service-doc/status), `/.well-known/mcp/server-card.json` (SEP-1649:
+      serverInfo, transport endpoint `/mcp`, capabilities/tools), and
+      `/.well-known/agent-skills/index.json` (Agent Skills Discovery RFC
+      v0.2.0: $schema + skills[] with name/type/description/url/sha256 — the
+      digest computed from the live SKILL.md content). _Accepts:_ all three
+      render with correct content types; sha256 in the index matches the
+      served /skill body.
+- [ ] **10.4 Auth discovery.** `/.well-known/oauth-protected-resource`
+      (RFC 9728: resource, authorization*servers, scopes_supported = public
+      capability names), `/.well-known/oauth-authorization-server` (RFC 8414
+      fields we genuinely have: issuer, registration via agent-auth, the
+      device-authorization endpoint, jwks where applicable) including the
+      auth.md `agent_auth` block (register_uri, identity/credential types),
+      and `/auth.md` — markdown registration instructions for agents
+      (agent-auth protocol + register-key fallback), generated from the same
+      sources as llms.txt where possible. Honest metadata only — no fake
+      OAuth endpoints. \_Accepts:* all three render; agent_auth.register_uri
+      round-trips against the real register endpoint locally.
+- [ ] **10.5 Markdown negotiation.** Requests with `Accept: text/markdown`
+      on HTML pages return markdown with `Content-Type: text/markdown`
+      (worker wrapper): `/docs` → llms.txt content, `/skill` already
+      markdown, `/` → a markdown landing summary (hero pitch + agent
+      quickstart + live links); browsers keep HTML. The audit saw a 500 —
+      must return 200. _Accepts:_ curl with the Accept header gets markdown
+      200s on `/`, `/docs`; plain requests still get HTML.
+- [ ] **10.6 WebMCP.** On the landing page, feature-detect
+      `navigator.modelContext` and `provideContext()` with tools wrapping the
+      public API: `list_models`, `get_schema`, `validate_payload` (fetch
+      wrappers with JSON Schema inputs). No-op when the API is absent.
+      _Accepts:_ guarded registration code ships on `/` without console
+      errors in normal browsers; tool definitions match the MCP tool shapes.
+- [ ] **10.7 DNS-AID (+ ship + reverify).** Attempt to publish
+      `_index._agents.modelschemas.com` ServiceMode HTTPS/SVCB records (alpn
+      h2, target the apex) via the Cloudflare API; DNSSEC needs zone signing + a DS record at the registrar — document for Tom if the API token
+      lacks DNS scope. Then deploy everything and re-verify each Phase 10
+      surface on https://modelschemas.com. _Accepts:_ production curls for
+      10.1–10.5 all pass; DNS-AID either resolves or is marked BLOCKED with
+      exact records for Tom.
