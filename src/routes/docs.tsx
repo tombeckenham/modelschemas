@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Streamdown } from 'streamdown'
 
+import { SiteFooter, SiteNav } from '#/components/site.tsx'
 import { llmsTxt } from '#/server/llms-txt.ts'
 
 export const Route = createFileRoute('/docs')({
@@ -8,7 +9,6 @@ export const Route = createFileRoute('/docs')({
 })
 
 const LINKS: Array<[label: string, href: string]> = [
-  ['Dashboard', '/'],
   ['API index', '/v1'],
   ['openapi.json', '/openapi.json'],
   ['llms.txt (this content, raw)', '/llms.txt'],
@@ -21,19 +21,37 @@ const LINKS: Array<[label: string, href: string]> = [
 
 function Docs() {
   return (
-    <div className="mx-auto max-w-3xl space-y-8 p-8">
-      <nav className="flex flex-wrap gap-4 text-sm">
-        {LINKS.map(([label, href]) => (
-          <a key={href} className="underline underline-offset-4" href={href}>
-            {label}
-          </a>
-        ))}
-      </nav>
-      {/* Rendered from the exact llms.txt source so the human docs can never
-          drift from what agents read. */}
-      <article className="prose prose-zinc dark:prose-invert max-w-none">
-        <Streamdown>{llmsTxt}</Streamdown>
-      </article>
+    <div className="min-h-screen text-ink">
+      <SiteNav active="docs" />
+      <div className="mx-auto max-w-3xl space-y-10 px-5 py-14">
+        <header className="space-y-3">
+          <h1 className="font-display text-5xl text-ink-bright">
+            Docs<em className="text-phosphor">.</em>
+          </h1>
+          <p className="font-mono text-xs text-ink-dim">
+            rendered from the exact /llms.txt agents fetch — zero drift by
+            construction.
+          </p>
+          <nav className="flex flex-wrap gap-x-5 gap-y-1 font-mono text-xs">
+            {LINKS.map(([label, href]) => (
+              <a
+                key={href}
+                className="text-ink underline-offset-4 hover:text-phosphor hover:underline"
+                href={href}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        </header>
+
+        {/* Rendered from the exact llms.txt source so the human docs can never
+            drift from what agents read. */}
+        <article className="prose prose-invert prose-zinc max-w-none prose-headings:font-display prose-headings:font-normal prose-headings:text-ink-bright prose-code:text-phosphor prose-a:text-amber prose-li:marker:text-phosphor-dim">
+          <Streamdown>{llmsTxt}</Streamdown>
+        </article>
+      </div>
+      <SiteFooter />
     </div>
   )
 }

@@ -15,7 +15,12 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'modelschemas — live AI model schemas',
+      },
+      {
+        name: 'description',
+        content:
+          'Which AI models exist right now, and what do their payloads look like? Live request/response JSON Schemas and model metadata across OpenAI, Anthropic, Gemini, Grok, ElevenLabs, OpenRouter and FAL — built for agents.',
       },
     ],
     links: [
@@ -34,7 +39,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="scanlines">
         {children}
         <TanStackDevtools
           config={{

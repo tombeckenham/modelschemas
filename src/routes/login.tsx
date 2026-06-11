@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { createFileRoute, useRouter } from '@tanstack/react-router'
 
+import { SiteFooter, SiteNav } from '#/components/site.tsx'
 import { authClient } from '#/lib/auth-client.ts'
 
 export const Route = createFileRoute('/login')({
@@ -50,95 +51,103 @@ function Login() {
   }
 
   const inputClasses =
-    'w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700'
+    'hairline w-full rounded border bg-panel-raised px-3 py-2 font-mono text-sm text-ink-bright outline-none transition focus:border-phosphor/60'
   const buttonClasses =
-    'w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300'
+    'w-full rounded border border-phosphor/60 bg-phosphor/10 px-3 py-2 font-mono text-sm text-phosphor transition hover:bg-phosphor/20 disabled:opacity-50'
 
   return (
-    <div className="mx-auto max-w-sm space-y-6 p-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">
-          <a href="/">modelschemas</a>
-        </h1>
-        <p className="text-sm text-zinc-500">
-          Sign in to manage your API keys. We email you a one-time code — no
-          password.
-        </p>
-      </header>
-
-      {isPending ? null : session ? (
-        <div className="space-y-3 text-sm">
-          <p>
-            Signed in as{' '}
-            <span className="font-medium">{session.user.email}</span>
+    <div className="min-h-screen text-ink">
+      <SiteNav />
+      <div className="mx-auto max-w-sm space-y-6 px-5 py-16">
+        <header className="space-y-2">
+          <h1 className="font-display text-4xl text-ink-bright">
+            Sign in<em className="text-phosphor">.</em>
+          </h1>
+          <p className="text-sm">
+            Manage your API keys. We email you a one-time code — no password.
           </p>
-          <a className="underline underline-offset-4" href="/account">
-            Manage API keys →
-          </a>
-          <button
-            type="button"
-            className={buttonClasses}
-            onClick={() => {
-              void authClient.signOut().then(() => router.invalidate())
+        </header>
+
+        {isPending ? null : session ? (
+          <div className="space-y-3 text-sm">
+            <p>
+              Signed in as{' '}
+              <span className="font-medium">{session.user.email}</span>
+            </p>
+            <a
+              className="text-phosphor underline-offset-4 hover:underline"
+              href="/account"
+            >
+              Manage API keys →
+            </a>
+            <button
+              type="button"
+              className={buttonClasses}
+              onClick={() => {
+                void authClient.signOut().then(() => router.invalidate())
+              }}
+            >
+              Sign out
+            </button>
+          </div>
+        ) : step === 'email' ? (
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              void sendCode(event)
             }}
           >
-            Sign out
-          </button>
-        </div>
-      ) : step === 'email' ? (
-        <form
-          className="space-y-3"
-          onSubmit={(event) => {
-            void sendCode(event)
-          }}
-        >
-          <input
-            className={inputClasses}
-            type="email"
-            required
-            placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-          <button className={buttonClasses} disabled={busy} type="submit">
-            {busy ? 'Sending…' : 'Email me a code'}
-          </button>
-        </form>
-      ) : (
-        <form
-          className="space-y-3"
-          onSubmit={(event) => {
-            void verifyCode(event)
-          }}
-        >
-          <p className="text-sm text-zinc-500">
-            Enter the 6-digit code sent to{' '}
-            <span className="font-medium">{email}</span>.
-          </p>
-          <input
-            className={`${inputClasses} text-center text-lg tracking-[0.4em]`}
-            inputMode="numeric"
-            pattern="[0-9]{6}"
-            maxLength={6}
-            required
-            placeholder="••••••"
-            value={otp}
-            onChange={(event) => setOtp(event.target.value)}
-          />
-          <button className={buttonClasses} disabled={busy} type="submit">
-            {busy ? 'Verifying…' : 'Sign in'}
-          </button>
-          <button
-            type="button"
-            className="w-full text-xs text-zinc-500 underline underline-offset-4"
-            onClick={() => setStep('email')}
+            <input
+              className={inputClasses}
+              type="email"
+              required
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+            <button className={buttonClasses} disabled={busy} type="submit">
+              {busy ? 'Sending…' : 'Email me a code'}
+            </button>
+          </form>
+        ) : (
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              void verifyCode(event)
+            }}
           >
-            Use a different email
-          </button>
-        </form>
-      )}
+            <p className="text-sm text-ink-dim">
+              Enter the 6-digit code sent to{' '}
+              <span className="font-medium">{email}</span>.
+            </p>
+            <input
+              className={`${inputClasses} text-center text-lg tracking-[0.4em]`}
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              required
+              placeholder="••••••"
+              value={otp}
+              onChange={(event) => setOtp(event.target.value)}
+            />
+            <button className={buttonClasses} disabled={busy} type="submit">
+              {busy ? 'Verifying…' : 'Sign in'}
+            </button>
+            <button
+              type="button"
+              className="w-full font-mono text-xs text-ink-dim underline underline-offset-4 hover:text-ink"
+              onClick={() => setStep('email')}
+            >
+              Use a different email
+            </button>
+          </form>
+        )}
 
-      {error ? <p className="text-sm text-red-500">{error}</p> : null}
+        {error ? (
+          <p className="font-mono text-sm text-signal-red">{error}</p>
+        ) : null}
+      </div>
+      <SiteFooter />
     </div>
   )
 }

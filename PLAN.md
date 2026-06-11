@@ -607,7 +607,7 @@ The production domain is **modelschemas.com**.
     end to end (OTP sign-in → session-cookie key create → key 200s /v1/agents/me →
     revoke → 401); worker tests cover the lifecycle plus cross-user isolation
     (Bob can't see/revoke Alice's key).
-- [ ] **9.4 Frontend overhaul (use the /frontend-design:frontend-design
+- [x] **9.4 Frontend overhaul (use the /frontend-design:frontend-design
       skill).** Make the site look hot while staying agent-first: redesign
       the landing page (`/`) with a hero that pitches the service, a
       prominent "for agents" section (copy-paste curl + CLI + MCP + skill
@@ -616,6 +616,13 @@ The production domain is **modelschemas.com**.
       (JSON endpoints untouched). _Accepts:_ pages render with the new
       design against local data; all links resolve; existing tests stay
       green.
+  - Note: direction = "machine registry" — dark instrument panel (phosphor green /
+    amber on near-black), Instrument Serif display + IBM Plex Mono data + Instrument
+    Sans body, terminal-chrome cards, pulsing status dots, scanline overlay, staggered
+    hero reveal (reduced-motion safe). Shared chrome in src/components/site.tsx;
+    landing hero features a real schema fragment + etag, a 4-card FOR AGENTS section
+    (curl/validate/MCP/discovery+skill), live provider table and log-line change feed.
+    All 9 routes/surfaces curl-verified; agent JSON untouched; 128 tests green.
 - [ ] **9.5 Ship the human surface.** Deploy to production and verify on
       the live origin (modelschemas.com once 9.1 lands, else workers.dev):
       OTP sign-in (real email via the send*email binding when the zone is
