@@ -7,6 +7,8 @@ import { and, desc, eq, gte, lt, or } from 'drizzle-orm'
 import type { SQL } from 'drizzle-orm'
 
 import type { Db } from '#/db/index.ts'
+import { halGet } from '#/server/hal.ts'
+import type { HalLink } from '#/server/hal.ts'
 import { changes } from '#/db/schema.ts'
 import type { ChangeType } from '#/db/schema.ts'
 
@@ -49,7 +51,7 @@ export type ListChangesOutcome =
         count: number
         changes: Array<typeof changes.$inferSelect>
         nextCursor: string | null
-        _links: { self: string; next?: string }
+        _links: { self: HalLink; next?: HalLink }
       }
     }
   | { ok: false; status: number; code: string; message: string }
@@ -117,10 +119,12 @@ export async function listChanges(
       changes: page,
       nextCursor,
       _links: {
-        self,
+        self: halGet(self),
         ...(nextCursor
           ? {
-              next: `/v1/changes?${baseParams ? `${baseParams}&` : ''}cursor=${encodeURIComponent(nextCursor)}`,
+              next: halGet(
+                `/v1/changes?${baseParams ? `${baseParams}&` : ''}cursor=${encodeURIComponent(nextCursor)}`,
+              ),
             }
           : {}),
       },

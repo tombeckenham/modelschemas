@@ -709,7 +709,7 @@ Agents consume APIs differently from programmers. Keep the DX surface
 (`/openapi.json`, typed client) separate from the agent experience (AX)
 surface; these tasks build the AX layer.
 
-- [ ] **11.1 HAL self-description.** Add `_links` (HAL) to `/v1` and every
+- [x] **11.1 HAL self-description.** Add `_links` (HAL) to `/v1` and every
       `/v1/*` JSON read response, extended per link with `method`,
       `contentType`, and an inline `example` (HAL doesn't carry these —
       agents need them). Keep payload shapes backwards-compatible (additive

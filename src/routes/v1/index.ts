@@ -1,5 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
+import { halGet, halPost } from '#/server/hal.ts'
+
 export const serviceIndex = {
   service: 'modelschemas',
   description:
@@ -9,16 +11,39 @@ export const serviceIndex = {
     agents: '/llms.txt',
   },
   _links: {
-    status: '/v1/status',
-    providers: '/v1/providers',
-    models: '/v1/models{?activity,provider,capability,q}',
-    model: '/v1/models/{provider}/{modelId}',
-    schemas: '/v1/schemas/{provider}',
-    activitySchemas: '/v1/schemas/{provider}/{activity}',
-    schema: '/v1/schemas/{provider}/{activity}/{endpointId}{?kind,version}',
-    validate: 'POST /v1/validate',
-    changes: '/v1/changes{?since,provider,type,cursor,limit}',
-    agentDiscovery: '/.well-known/agent-configuration',
+    self: halGet('/v1'),
+    status: halGet('/v1/status'),
+    providers: halGet('/v1/providers'),
+    models: halGet('/v1/models{?activity,provider,capability,q}', {
+      example: '/v1/models?activity=chat&q=claude',
+    }),
+    model: halGet('/v1/models/{provider}/{modelId}', {
+      example: '/v1/models/anthropic/claude-sonnet-4-5',
+    }),
+    schemas: halGet('/v1/schemas/{provider}', {
+      example: '/v1/schemas/anthropic',
+    }),
+    activitySchemas: halGet('/v1/schemas/{provider}/{activity}', {
+      example: '/v1/schemas/anthropic/chat',
+    }),
+    schema: halGet(
+      '/v1/schemas/{provider}/{activity}/{endpointId}{?kind,version}',
+      {
+        example: '/v1/schemas/anthropic/chat/v1%2Fmessages?kind=input',
+      },
+    ),
+    validate: halPost('/v1/validate', {
+      example: {
+        provider: 'anthropic',
+        endpointId: 'v1/messages',
+        kind: 'input',
+        payload: { model: 'claude-sonnet-4-5', max_tokens: 1024 },
+      },
+    }),
+    changes: halGet('/v1/changes{?since,provider,type,cursor,limit}', {
+      example: '/v1/changes?limit=20',
+    }),
+    agentDiscovery: halGet('/.well-known/agent-configuration'),
   },
 }
 

@@ -10,6 +10,7 @@ import { and, eq, isNull } from 'drizzle-orm'
 import type { Db } from '#/db/index.ts'
 import { endpoints, providers, schemaVersions } from '#/db/schema.ts'
 import type { Activity } from '#/db/schema.ts'
+import { halGet } from '#/server/hal.ts'
 
 export function publicEndpointId(dbId: string, providerId: string): string {
   return dbId.startsWith(`${providerId}/`)
@@ -47,9 +48,11 @@ export async function getProviderSchemaIndex(db: Db, providerId: string) {
     count: rows.length,
     activities,
     _links: {
-      self: `/v1/schemas/${providerId}`,
-      activity: `/v1/schemas/${providerId}/{activity}`,
-      schema: `/v1/schemas/${providerId}/{activity}/{endpointId}{?kind,version}`,
+      self: halGet(`/v1/schemas/${providerId}`),
+      activity: halGet(`/v1/schemas/${providerId}/{activity}`),
+      schema: halGet(
+        `/v1/schemas/${providerId}/{activity}/{endpointId}{?kind,version}`,
+      ),
     },
   }
 }
@@ -96,8 +99,10 @@ export async function getActivitySchemaMap(
     count: Object.keys(map).length,
     endpoints: map,
     _links: {
-      self: `/v1/schemas/${providerId}/${activity}`,
-      schema: `/v1/schemas/${providerId}/${activity}/{endpointId}{?kind,version}`,
+      self: halGet(`/v1/schemas/${providerId}/${activity}`),
+      schema: halGet(
+        `/v1/schemas/${providerId}/${activity}/{endpointId}{?kind,version}`,
+      ),
     },
   }
 }

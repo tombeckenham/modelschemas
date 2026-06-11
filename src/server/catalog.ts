@@ -9,6 +9,7 @@ import type { SQL } from 'drizzle-orm'
 import type { Db } from '#/db/index.ts'
 import { models, providers } from '#/db/schema.ts'
 import type { Activity } from '#/db/schema.ts'
+import { halGet } from '#/server/hal.ts'
 import { getServiceStatus } from '#/server/status.ts'
 
 export interface ModelFilters {
@@ -24,8 +25,8 @@ export interface ModelFilters {
 
 function modelLinks(providerId: string) {
   return {
-    provider: `/v1/providers/${providerId}/models`,
-    schemas: `/v1/schemas/${providerId}`,
+    provider: halGet(`/v1/providers/${providerId}/models`),
+    schemas: halGet(`/v1/schemas/${providerId}`),
   }
 }
 
@@ -59,11 +60,11 @@ export async function listProvidersCatalog(db: Db) {
     providers: status.providers.map((p) => ({
       ...p,
       _links: {
-        models: `/v1/providers/${p.id}/models`,
-        schemas: `/v1/schemas/${p.id}`,
+        models: halGet(`/v1/providers/${p.id}/models`),
+        schemas: halGet(`/v1/schemas/${p.id}`),
       },
     })),
-    _links: { self: '/v1/providers', catalog: '/v1/models' },
+    _links: { self: halGet('/v1/providers'), catalog: halGet('/v1/models') },
   }
 }
 
@@ -94,7 +95,12 @@ export async function listModelsCatalog(db: Db, filters: ModelFilters = {}) {
   return {
     count: rows.length,
     models: rows.map(toApiModel),
-    _links: { self: '/v1/models', providers: '/v1/providers' },
+    _links: {
+      self: halGet('/v1/models{?activity,provider,capability,q}', {
+        example: '/v1/models?activity=chat&q=claude',
+      }),
+      providers: halGet('/v1/providers'),
+    },
   }
 }
 

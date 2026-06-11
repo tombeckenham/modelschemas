@@ -121,8 +121,16 @@ describe('listModelsCatalog filters', () => {
     })
     expect(result.models.map((m) => m.id)).toEqual(['cat-alpha-chatty'])
     expect(result.models[0]?._links).toEqual({
-      provider: '/v1/providers/cat-alpha/models',
-      schemas: '/v1/schemas/cat-alpha',
+      provider: {
+        href: '/v1/providers/cat-alpha/models',
+        method: 'GET',
+        contentType: 'application/json',
+      },
+      schemas: {
+        href: '/v1/schemas/cat-alpha',
+        method: 'GET',
+        contentType: 'application/json',
+      },
     })
   })
 })
@@ -139,14 +147,14 @@ describe('provider-scoped queries', () => {
     const byRaw = await getModelDetail(db, 'cat-beta', 'beta/chatter')
     expect(bySlug?.id).toBe('cat-beta-chatter')
     expect(byRaw?.id).toBe('cat-beta-chatter')
-    expect(byRaw?._links.schemas).toBe('/v1/schemas/cat-beta')
+    expect(byRaw?._links.schemas.href).toBe('/v1/schemas/cat-beta')
     expect(await getModelDetail(db, 'cat-beta', 'missing')).toBeNull()
   })
 
   it('lists providers with status and links', async () => {
     const result = await listProvidersCatalog(db)
     const alpha = result.providers.find((p) => p.id === 'cat-alpha')
-    expect(alpha?._links.models).toBe('/v1/providers/cat-alpha/models')
+    expect(alpha?._links.models.href).toBe('/v1/providers/cat-alpha/models')
     expect(alpha?.counts.models).toBe(2)
   })
 })

@@ -77,7 +77,7 @@ describe('listChanges pagination', () => {
       if (!outcome.ok) break
       seen.push(...outcome.result.changes.map((c) => c.id))
       if (outcome.result.nextCursor) {
-        expect(outcome.result._links.next).toContain('cursor=')
+        expect(outcome.result._links.next?.href).toContain('cursor=')
       }
       cursor = outcome.result.nextCursor ?? undefined
       pages++

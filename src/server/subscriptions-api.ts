@@ -6,6 +6,7 @@
 import { and, count, eq } from 'drizzle-orm'
 
 import type { Db } from '#/db/index.ts'
+import { halGet } from '#/server/hal.ts'
 import { changeTypes, subscriptions, user } from '#/db/schema.ts'
 import type { Principal } from '#/server/require-agent.ts'
 
@@ -218,7 +219,10 @@ export async function listSubscriptions(db: Db, principal: Principal) {
   return {
     count: rows.length,
     subscriptions: rows.map(toApiSubscription),
-    _links: { self: '/v1/subscriptions', changes: '/v1/changes' },
+    _links: {
+      self: halGet('/v1/subscriptions'),
+      changes: halGet('/v1/changes'),
+    },
   }
 }
 

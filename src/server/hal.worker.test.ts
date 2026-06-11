@@ -1,0 +1,178 @@
+import { beforeAll, describe, expect, it } from 'vitest'
+import { env } from 'cloudflare:test'
+
+import { getDb } from '../db/index.ts'
+import type { Db } from '../db/index.ts'
+import { endpoints, models, providers, schemaVersions } from '../db/schema.ts'
+import { serviceIndex } from '../routes/v1/index.ts'
+import { listChanges } from './changes-api.ts'
+import {
+  getModelDetail,
+  listModelsCatalog,
+  listProvidersCatalog,
+} from './catalog.ts'
+import type { HalLink } from './hal.ts'
+import {
+  getActivitySchemaMap,
+  getEndpointSchema,
+  getProviderSchemaIndex,
+} from './schemas-api.ts'
+import { getServiceStatus } from './status.ts'
+import { validatePayload } from './validate.ts'
+import type { ValidateRequestBody } from './validate.ts'
+
+let db: Db
+
+const SCHEMA = JSON.stringify({
+  type: 'object',
+  required: ['model', 'max_tokens'],
+  properties: {
+    model: { type: 'string' },
+    max_tokens: { type: 'integer' },
+  },
+})
+
+beforeAll(async () => {
+  db = getDb(env)
+  // Seed the data the serviceIndex examples reference, so walking the
+  // examples proves they are live URLs.
+  await db.insert(providers).values({
+    id: 'anthropic',
+    displayName: 'Anthropic',
+    specSourceUrl: 'https://example.com/spec.json',
+  })
+  const NOW = 1_781_150_000
+  await db.insert(models).values({
+    id: 'anthropic-claude-sonnet-4-5',
+    providerId: 'anthropic',
+    rawId: 'claude-sonnet-4-5',
+    activity: 'chat',
+    firstSeenAt: NOW,
+    lastSeenAt: NOW,
+  })
+  await db.insert(endpoints).values({
+    id: 'anthropic/v1/messages',
+    providerId: 'anthropic',
+    path: '/v1/messages',
+    method: 'POST',
+    activity: 'chat',
+  })
+  await db.insert(schemaVersions).values({
+    id: 'sv-hal-input',
+    endpointId: 'anthropic/v1/messages',
+    kind: 'input',
+    contentHash: 'hash-hal-input',
+    schema: SCHEMA,
+    createdAt: NOW,
+  })
+})
+
+/** Resolves a link the way the HTTP router would; throws on unknown paths
+ * so a new link without a dispatcher entry fails the walk. */
+async function resolve(target: string | Record<string, unknown>) {
+  if (typeof target !== 'string') {
+    // POST example bodies — only /v1/validate today.
+    const outcome = await validatePayload(
+      db,
+      target as unknown as ValidateRequestBody,
+    )
+    expect(outcome.ok).toBe(true)
+    return
+  }
+  if (!target.startsWith('/v1')) return // .well-known etc. — out of scope
+  const url = new URL(target, 'https://walk.test')
+  const segments = url.pathname.split('/').filter(Boolean).slice(1)
+  const [head, ...rest] = segments
+  switch (head) {
+    case undefined:
+      return // /v1 — the document under test
+    case 'status':
+      expect((await getServiceStatus(db)).providers.length).toBeGreaterThan(0)
+      return
+    case 'providers':
+      expect((await listProvidersCatalog(db)).providers.length).toBeGreaterThan(
+        0,
+      )
+      return
+    case 'models': {
+      if (rest.length === 0) {
+        const activity = url.searchParams.get('activity')
+        const result = await listModelsCatalog(db, {
+          activity: activity === 'chat' ? 'chat' : undefined,
+          q: url.searchParams.get('q') ?? undefined,
+        })
+        expect(result.count).toBeGreaterThan(0)
+        return
+      }
+      const [provider, modelId] = rest
+      expect(
+        await getModelDetail(db, provider ?? '', modelId ?? ''),
+      ).not.toBeNull()
+      return
+    }
+    case 'schemas': {
+      const [provider, activity, ...endpointParts] = rest
+      if (!activity) {
+        expect(
+          (await getProviderSchemaIndex(db, provider ?? '')).count,
+        ).toBeGreaterThan(0)
+        return
+      }
+      if (endpointParts.length === 0) {
+        expect(activity).toBe('chat')
+        expect(
+          (await getActivitySchemaMap(db, provider ?? '', 'chat')).count,
+        ).toBeGreaterThan(0)
+        return
+      }
+      const endpointId = decodeURIComponent(endpointParts.join('/'))
+      const kind =
+        url.searchParams.get('kind') === 'output' ? 'output' : 'input'
+      expect(activity).toBe('chat')
+      expect(
+        await getEndpointSchema(db, provider ?? '', 'chat', endpointId, kind),
+      ).not.toBeNull()
+      return
+    }
+    case 'changes': {
+      const outcome = await listChanges(db, {})
+      expect(outcome.ok).toBe(true)
+      return
+    }
+    default:
+      throw new Error(`no dispatcher for link target ${target}`)
+  }
+}
+
+function assertHalShape(name: string, link: HalLink) {
+  expect(link.href, name).toBeTruthy()
+  expect(['GET', 'POST', 'DELETE'], name).toContain(link.method)
+  expect(link.contentType, name).toBeTruthy()
+  if (link.href.includes('{')) {
+    expect(link.templated, `${name} must mark templated`).toBe(true)
+    expect(link.example, `${name} template needs an example`).toBeDefined()
+  }
+}
+
+describe('HAL self-description (task 11.1)', () => {
+  it('walks every GET /v1 link to a live resource', async () => {
+    for (const [name, link] of Object.entries(serviceIndex._links)) {
+      assertHalShape(name, link)
+      await resolve(link.example ?? link.href)
+    }
+  })
+
+  it('walks every GET /v1/models link', async () => {
+    const result = await listModelsCatalog(db, {})
+    for (const [name, link] of Object.entries(result._links)) {
+      assertHalShape(name, link)
+      await resolve(link.example ?? link.href)
+    }
+    // Model rows carry HAL links too.
+    const model = result.models[0]
+    for (const [name, link] of Object.entries(model?._links ?? {})) {
+      assertHalShape(name, link)
+      await resolve(link.href)
+    }
+  })
+})

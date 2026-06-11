@@ -3,6 +3,7 @@
  * speak the agent-auth protocol: one POST creates a Better Auth user and an
  * API key (returned exactly once).
  */
+import { halGet, halPost } from '#/server/hal.ts'
 import { eq } from 'drizzle-orm'
 
 import type { Db } from '#/db/index.ts'
@@ -133,10 +134,10 @@ export async function agentsMe(
     },
     usage,
     _links: {
-      self: '/v1/agents/me',
-      capabilities: '/api/auth/capability/list',
-      changes: '/v1/changes',
-      subscriptions: '/v1/subscriptions',
+      self: halGet('/v1/agents/me'),
+      capabilities: halPost('/api/auth/capability/list'),
+      changes: halGet('/v1/changes'),
+      subscriptions: halGet('/v1/subscriptions'),
     },
   })
 }

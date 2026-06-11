@@ -29,6 +29,14 @@ minutes, full OpenAPI spec syncs daily. Every response is JSON.
 5. POST /v1/validate {"provider","endpointId","payload"} — check a payload.
 6. GET /v1/changes?since=<unix epoch> — what changed.
 
+## Hypermedia (HAL, extended)
+
+Every JSON read response carries \`_links\`: HAL link objects extended with
+\`method\`, \`contentType\`, and an inline \`example\` (a resolvable URL for
+GETs, a request body for POSTs) so you can follow the API without consulting
+docs. Templated hrefs (RFC 6570) set \`"templated": true\` and always include
+an example. Start at GET /v1 and follow \`_links\`.
+
 ## Caching
 
 Read responses carry ETag (content hash), Last-Modified, Cache-Control with
