@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest'
 import { env } from 'cloudflare:test'
 
+import { llmsTxt } from './llms-txt.ts'
 import { getDb } from '../db/index.ts'
 import type { Db } from '../db/index.ts'
 import { endpoints, models, providers, schemaVersions } from '../db/schema.ts'
@@ -75,10 +76,16 @@ describe('MCP endpoint', () => {
   it('initializes and lists the five tools', async () => {
     const init = await handleMcpRequest(db, rpc('initialize'))
     const initBody = (await init.json()) as {
-      result: { protocolVersion: string; serverInfo: { name: string } }
+      result: {
+        protocolVersion: string
+        serverInfo: { name: string }
+        instructions: string
+      }
     }
     expect(initBody.result.serverInfo.name).toBe('modelschemas')
     expect(initBody.result.protocolVersion).toBeTruthy()
+    // Task 11.2: initialize instructions share the llms.txt source.
+    expect(initBody.result.instructions).toBe(llmsTxt)
 
     const list = await handleMcpRequest(db, rpc('tools/list'))
     const listBody = (await list.json()) as {

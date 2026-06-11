@@ -12,6 +12,7 @@ import {
   markdownResponse,
   wantsMarkdown,
 } from '#/server/markdown-pages.ts'
+import { narrativeRoot, wantsJsonRoot } from '#/server/narrative.ts'
 import { enforceRateLimit } from '#/server/rate-limit.ts'
 import { pollAllProviders } from '#/server/ingest/poll-models.ts'
 import { syncAllProviders } from '#/server/ingest/sync.ts'
@@ -52,6 +53,13 @@ export default {
         request,
       )
       if (limited) return limited
+    }
+    // Narrative API root (task 11.2): JSON-accepting GET / gets the MCP
+    // initialize instructions document instead of the SSR landing page.
+    if (pathname === '/' && wantsJsonRoot(request)) {
+      const body = Response.json(narrativeRoot(url.origin))
+      body.headers.set('Vary', 'Accept')
+      return body
     }
     // Markdown content negotiation (task 10.5): Accept: text/markdown on an
     // HTML page returns markdown instead of SSR.

@@ -717,7 +717,7 @@ surface; these tasks build the AX layer.
       `GET /v1/models` responses carry `_links` whose hrefs all resolve 200
       locally (worker test walks them); openapi.json regenerated without
       breaking `check:client`.
-- [ ] **11.2 Narrative API root.** Make a JSON-accepting `GET /`
+- [x] **11.2 Narrative API root.** Make a JSON-accepting `GET /`
       (`Accept: application/json`, plus the `GET /v1` self link) return the equivalent of
       MCP default instructions: narrative description, workflow, inline
       examples, and HAL links — the same content an MCP `initialize`

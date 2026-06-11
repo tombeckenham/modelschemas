@@ -9,6 +9,7 @@ import { activities, changeTypes } from '#/db/schema.ts'
 import type { Activity, ChangeType } from '#/db/schema.ts'
 import { listChanges } from '#/server/changes-api.ts'
 import { getModelDetail, listModelsCatalog } from '#/server/catalog.ts'
+import { llmsTxt } from '#/server/llms-txt.ts'
 import { getEndpointSchema } from '#/server/schemas-api.ts'
 import { validatePayload } from '#/server/validate.ts'
 
@@ -254,6 +255,8 @@ export async function handleMcpRequest(
             description:
               'Live AI model schemas: catalog, JSON Schemas, validation, change feed.',
           },
+          // Shared with the GET / narrative root (task 11.2) — one source.
+          instructions: llmsTxt,
         }),
       )
     case 'ping':
