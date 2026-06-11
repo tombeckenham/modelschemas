@@ -7,6 +7,11 @@ import { getAuth } from '#/server/auth.ts'
 import type { KvEnv } from '#/server/kv.ts'
 import type { ProviderSecrets } from '#/server/providers/types.ts'
 import { withDiscoveryLinks } from '#/server/discovery-links.ts'
+import {
+  markdownForPath,
+  markdownResponse,
+  wantsMarkdown,
+} from '#/server/markdown-pages.ts'
 import { enforceRateLimit } from '#/server/rate-limit.ts'
 import { pollAllProviders } from '#/server/ingest/poll-models.ts'
 import { syncAllProviders } from '#/server/ingest/sync.ts'
@@ -34,7 +39,8 @@ export default {
   ): Promise<Response> {
     // Rate limit the public API (admin-keyed requests are exempt; auth
     // endpoints have agent-auth's own protections).
-    const { pathname } = new URL(request.url)
+    const url = new URL(request.url)
+    const { pathname } = url
     if (
       pathname.startsWith('/v1/') &&
       !isAdminRequest(request, env.ADMIN_KEY)
@@ -46,6 +52,12 @@ export default {
         request,
       )
       if (limited) return limited
+    }
+    // Markdown content negotiation (task 10.5): Accept: text/markdown on an
+    // HTML page returns markdown instead of SSR.
+    if (wantsMarkdown(request)) {
+      const md = markdownForPath(pathname, url.origin)
+      if (md !== null) return markdownResponse(md)
     }
     // TanStack Start's handler takes (request, opts?) — bindings flow in via
     // the cloudflare:workers env module, not handler arguments. HTML pages

@@ -672,7 +672,7 @@ rel="service-doc"`, `</llms.txt>; rel="describedby"`. _Accepts:_ curl -I
       sources as llms.txt where possible. Honest metadata only — no fake
       OAuth endpoints. \_Accepts:* all three render; agent_auth.register_uri
       round-trips against the real register endpoint locally.
-- [ ] **10.5 Markdown negotiation.** Requests with `Accept: text/markdown`
+- [x] **10.5 Markdown negotiation.** Requests with `Accept: text/markdown`
       on HTML pages return markdown with `Content-Type: text/markdown`
       (worker wrapper): `/docs` → llms.txt content, `/skill` already
       markdown, `/` → a markdown landing summary (hero pitch + agent
