@@ -13,6 +13,7 @@ import { Route as OpenapiDotjsonRouteImport } from './routes/openapi[.]json'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as V1IndexRouteImport } from './routes/v1/index'
+import { Route as V1ValidateRouteImport } from './routes/v1/validate'
 import { Route as V1StatusRouteImport } from './routes/v1/status'
 import { Route as V1ProvidersIndexRouteImport } from './routes/v1/providers/index'
 import { Route as V1ModelsIndexRouteImport } from './routes/v1/models/index'
@@ -42,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
 const V1IndexRoute = V1IndexRouteImport.update({
   id: '/v1/',
   path: '/v1/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V1ValidateRoute = V1ValidateRouteImport.update({
+  id: '/v1/validate',
+  path: '/v1/validate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const V1StatusRoute = V1StatusRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/llms.txt': typeof LlmsDottxtRoute
   '/openapi.json': typeof OpenapiDotjsonRoute
   '/v1/status': typeof V1StatusRoute
+  '/v1/validate': typeof V1ValidateRoute
   '/v1/': typeof V1IndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/v1/models/': typeof V1ModelsIndexRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/llms.txt': typeof LlmsDottxtRoute
   '/openapi.json': typeof OpenapiDotjsonRoute
   '/v1/status': typeof V1StatusRoute
+  '/v1/validate': typeof V1ValidateRoute
   '/v1': typeof V1IndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/v1/models': typeof V1ModelsIndexRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/llms.txt': typeof LlmsDottxtRoute
   '/openapi.json': typeof OpenapiDotjsonRoute
   '/v1/status': typeof V1StatusRoute
+  '/v1/validate': typeof V1ValidateRoute
   '/v1/': typeof V1IndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/v1/models/': typeof V1ModelsIndexRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/llms.txt'
     | '/openapi.json'
     | '/v1/status'
+    | '/v1/validate'
     | '/v1/'
     | '/api/auth/$'
     | '/v1/models/'
@@ -170,6 +180,7 @@ export interface FileRouteTypes {
     | '/llms.txt'
     | '/openapi.json'
     | '/v1/status'
+    | '/v1/validate'
     | '/v1'
     | '/api/auth/$'
     | '/v1/models'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/llms.txt'
     | '/openapi.json'
     | '/v1/status'
+    | '/v1/validate'
     | '/v1/'
     | '/api/auth/$'
     | '/v1/models/'
@@ -203,6 +215,7 @@ export interface RootRouteChildren {
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   OpenapiDotjsonRoute: typeof OpenapiDotjsonRoute
   V1StatusRoute: typeof V1StatusRoute
+  V1ValidateRoute: typeof V1ValidateRoute
   V1IndexRoute: typeof V1IndexRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   V1ModelsIndexRoute: typeof V1ModelsIndexRoute
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/v1'
       fullPath: '/v1/'
       preLoaderRoute: typeof V1IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/validate': {
+      id: '/v1/validate'
+      path: '/v1/validate'
+      fullPath: '/v1/validate'
+      preLoaderRoute: typeof V1ValidateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v1/status': {
@@ -323,6 +343,7 @@ const rootRouteChildren: RootRouteChildren = {
   LlmsDottxtRoute: LlmsDottxtRoute,
   OpenapiDotjsonRoute: OpenapiDotjsonRoute,
   V1StatusRoute: V1StatusRoute,
+  V1ValidateRoute: V1ValidateRoute,
   V1IndexRoute: V1IndexRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   V1ModelsIndexRoute: V1ModelsIndexRoute,

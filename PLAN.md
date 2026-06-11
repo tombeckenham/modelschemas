@@ -340,10 +340,15 @@ consumer: every list response includes `_links` to drill deeper, errors carry re
     Versioned (content-addressed) reads cache with staleTime 86400, current reads 300;
     single-schema ETag is the stored contentHash. Live-verified on synced OpenRouter
     data including a 304 round-trip; byte-identity asserted in worker tests.
-- [ ] **4.4 Validation endpoint.** `POST /v1/validate` with
+- [x] **4.4 Validation endpoint.** `POST /v1/validate` with
       `{ provider, endpointId, kind?, payload }` → `{ valid, errors: [{ path, message, keyword }] }`
       using `@cfworker/json-schema`. _Accepts:_ test with one valid + one invalid
       Anthropic messages payload.
+  - Note: worker tests use a trimmed Anthropic messages fixture (valid + invalid with
+    $defs-ref'd errors); also live-verified against the REAL synced Anthropic spec
+    (keyless sync: 5 endpoints / 10 versions) — valid payload passes, bad payload
+    yields structured required/enum errors. Response includes the schema contentHash
+    so agents know which version judged them.
 - [ ] **4.5 Changes feed.** `GET /v1/changes?since=&provider=&type=` (cursor-paginated)
       — the polling-friendly alternative to webhooks. _Accepts:_ cursor pagination test.
 
