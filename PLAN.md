@@ -249,10 +249,14 @@ Rules:
     (deduped against prior changes). Failed providers get status='degraded', successful
     syncs set lastSyncedAt + status='active'. Injectable clock for tests. D1 persists
     across tests in one isolate — worker tests use per-test provider ids.
-- [ ] **2.4 Model poller.** `src/server/ingest/poll-models.ts`: per provider, call
+- [x] **2.4 Model poller.** `src/server/ingest/poll-models.ts`: per provider, call
       `listModels`, normalise to the `models` shape, diff against D1 → `model.added` /
       `model.removed` / `model.updated` changes, bump `lastSeenAt`. _Accepts:_ fixture
       test covering add/remove/no-change.
+  - Note: normalisation lives in each provider's listModels (task 2.1); the poller
+    diffs. "Removed" = deprecatedAt set (row kept), recorded once; reappearance clears
+    deprecation via model.updated with a before/after payload. Model db ids are
+    `${providerId}-${slugified rawId}`.
 - [ ] **2.5 Wire crons.** `scheduled` dispatch: 15-min cron → `pollAllModels(env, ctx)`,
       daily cron → `syncAllSchemas(env, ctx)`. Stagger providers with `ctx.waitUntil` and
       keep each provider's work sequential to respect subrequest limits. _Accepts:_
