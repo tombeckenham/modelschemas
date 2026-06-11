@@ -280,11 +280,16 @@ Rules:
 
 ## Phase 3 — SWR cache layer ("server-side react query")
 
-- [ ] **3.1 `src/server/cache.ts`** — `swr(env, ctx, key, fetcher, { staleTime, hardTtl })`:
+- [x] **3.1 `src/server/cache.ts`** — `swr(env, ctx, key, fetcher, { staleTime, hardTtl })`:
       KV hit + fresh → return; KV hit + stale → return AND `ctx.waitUntil(revalidate)`
       guarded by the `cache_meta.refreshing` flag (cheap cross-isolate dedupe; a stuck
       flag older than 2× staleTime is ignored); miss → fetch inline, persist to KV +
       `cache_meta`. _Accepts:_ unit tests for all three paths and the stuck-flag case.
+  - Note: signature is `swr(deps, key, fetcher, opts)` with deps = {db, kv, waitUntil,
+    now?} (injectable clock + collected waitUntil promises make the tests
+    deterministic). Result carries fetchedAt/staleAt/revalidating for task 3.2's
+    header helper. Failed background revalidation records cache_meta.lastError and
+    keeps serving the stale value. 6 worker tests.
 - [ ] **3.2 HTTP cache semantics.** Response helper adding `ETag` (content hash),
       `Last-Modified`, `Cache-Control: public, max-age=60, stale-while-revalidate=600`,
       `X-Fetched-At`, `X-Stale-At`; honour `If-None-Match` → 304. Apply to all schema/model
