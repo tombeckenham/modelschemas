@@ -396,10 +396,16 @@ discovery → register → request capability grants → execute with short-live
     checks (full-access fallback). The plugin's key owner field is `referenceId`.
     Emails are pre-checked in D1 (better-auth's duplicate throw leaves a floating
     rejection). Live-verified: register → Bearer key on /v1/agents/me → 200.
-- [ ] **5.4 Rate limiting.** Per-agent/per-key and per-IP (anonymous) limits via
+- [x] **5.4 Rate limiting.** Per-agent/per-key and per-IP (anonymous) limits via
       Workers Rate Limiting binding (fallback: fixed-window counter in KV). Anonymous:
       60 req/h; authenticated: 5k req/h. 429s include `Retry-After`. _Accepts:_ test
       exhausts the anonymous window and sees 429.
+  - Note: KV fixed-window used (the Workers binding can't express hourly windows);
+    enforced centrally in src/worker.ts fetch for /v1/* (admin-keyed requests exempt).
+    API keys are verified for their bucket; agent JWTs bucket by *decoded\* sub — full
+    verification would consume the replay-protected jti before the route's own auth.
+    Eventual-consistency drift accepted (abuse mitigation, not billing). Acceptance
+    test exhausts 60 anon requests → 429 with Retry-After; keyed bucket independent.
 - [ ] **5.5 Usage endpoint.** `GET /v1/agents/me` — agent identity, grants, limits,
       current usage. _Accepts:_ curl with agent JWT and with API key.
 

@@ -6,8 +6,11 @@ import type {
 
 import { getDb } from '#/db/index.ts'
 import type { DbEnv } from '#/db/index.ts'
+import { isAdminRequest } from '#/server/admin.ts'
+import { getAuth } from '#/server/auth.ts'
 import type { KvEnv } from '#/server/kv.ts'
 import type { ProviderSecrets } from '#/server/providers/types.ts'
+import { enforceRateLimit } from '#/server/rate-limit.ts'
 import { pollAllProviders } from '#/server/ingest/poll-models.ts'
 import { syncAllProviders } from '#/server/ingest/sync.ts'
 import type { SyncDeps } from '#/server/ingest/sync.ts'
@@ -17,14 +20,39 @@ import type { SyncDeps } from '#/server/ingest/sync.ts'
 const MODELS_POLL_CRON = '*/15 * * * *'
 const SPEC_SYNC_CRON = '0 5 * * *'
 
-export interface WorkerEnv extends DbEnv, KvEnv, ProviderSecrets {}
+export interface WorkerEnv extends DbEnv, KvEnv, ProviderSecrets {
+  ADMIN_KEY?: string
+}
 
 function syncDeps(env: WorkerEnv): SyncDeps {
   return { db: getDb(env), kv: env.SCHEMA_CACHE, secrets: env }
 }
 
 export default {
-  fetch: serverEntry.fetch,
+  async fetch(
+    request: Request,
+    env: WorkerEnv,
+    ctx: ExecutionContext,
+  ): Promise<Response> {
+    // Rate limit the public API (admin-keyed requests are exempt; auth
+    // endpoints have agent-auth's own protections).
+    const { pathname } = new URL(request.url)
+    if (
+      pathname.startsWith('/v1/') &&
+      !isAdminRequest(request, env.ADMIN_KEY)
+    ) {
+      const limited = await enforceRateLimit(
+        getAuth(),
+        env.SCHEMA_CACHE,
+        request,
+      )
+      if (limited) return limited
+    }
+    // TanStack Start's handler takes (request, opts?) — bindings flow in via
+    // the cloudflare:workers env module, not handler arguments.
+    void ctx
+    return serverEntry.fetch(request)
+  },
 
   scheduled(
     controller: ScheduledController,
