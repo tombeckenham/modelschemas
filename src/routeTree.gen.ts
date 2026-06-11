@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SkillRouteImport } from './routes/skill'
 import { Route as OpenapiDotjsonRouteImport } from './routes/openapi[.]json'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as IndexRouteImport } from './routes/index'
@@ -47,6 +48,11 @@ const OpenapiDotjsonRoute = OpenapiDotjsonRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/docs': typeof DocsRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/openapi.json': typeof OpenapiDotjsonRoute
   '/skill': typeof SkillRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/docs': typeof DocsRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/openapi.json': typeof OpenapiDotjsonRoute
   '/skill': typeof SkillRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/docs': typeof DocsRoute
   '/llms.txt': typeof LlmsDottxtRoute
+  '/login': typeof LoginRoute
   '/mcp': typeof McpRoute
   '/openapi.json': typeof OpenapiDotjsonRoute
   '/skill': typeof SkillRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/'
     | '/docs'
     | '/llms.txt'
+    | '/login'
     | '/mcp'
     | '/openapi.json'
     | '/skill'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/'
     | '/docs'
     | '/llms.txt'
+    | '/login'
     | '/mcp'
     | '/openapi.json'
     | '/skill'
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/'
     | '/docs'
     | '/llms.txt'
+    | '/login'
     | '/mcp'
     | '/openapi.json'
     | '/skill'
@@ -323,6 +335,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DocsRoute: typeof DocsRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
+  LoginRoute: typeof LoginRoute
   McpRoute: typeof McpRoute
   OpenapiDotjsonRoute: typeof OpenapiDotjsonRoute
   SkillRoute: typeof SkillRoute
@@ -367,6 +380,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/llms.txt': {
@@ -523,6 +543,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DocsRoute: DocsRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
+  LoginRoute: LoginRoute,
   McpRoute: McpRoute,
   OpenapiDotjsonRoute: OpenapiDotjsonRoute,
   SkillRoute: SkillRoute,

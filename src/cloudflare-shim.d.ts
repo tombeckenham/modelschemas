@@ -9,6 +9,7 @@
 type KVNamespace = import('@cloudflare/workers-types').KVNamespace
 type D1Database = import('@cloudflare/workers-types').D1Database
 type ExecutionContext = import('@cloudflare/workers-types').ExecutionContext
+type SendEmail = import('@cloudflare/workers-types').SendEmail
 type ScheduledController =
   import('@cloudflare/workers-types').ScheduledController
 

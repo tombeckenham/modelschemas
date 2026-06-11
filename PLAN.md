@@ -573,7 +573,7 @@ The production domain is **modelschemas.com**.
     iteration and skip forward while the zone is absent. Route was reverted so
     deploys stay green; service stays on modelschemas.openstory.workers.dev
     meanwhile. NOTE: 9.2's email sender verification ALSO depends on this zone.
-- [ ] **9.2 Email OTP sign-in for humans.** Add better-auth's `emailOTP`
+- [x] **9.2 Email OTP sign-in for humans.** Add better-auth's `emailOTP`
       plugin to `createAuth` with a mail abstraction in
       `src/server/email.ts` built on **Cloudflare Email Workers** — a
       `send_email` binding (`EMAIL`) in `wrangler.jsonc` using the
@@ -588,6 +588,13 @@ The production domain is **modelschemas.com**.
       Regenerate worker-configuration.d.ts after adding the binding.
       _Accepts:_ worker test issues + verifies an OTP via an injected
       sender; live dev sign-in works end to end using the logged code.
+  - Note: live-verified — the vite plugin SIMULATES the send_email binding locally
+    and writes messages to a temp .txt (path printed in dev output), so the dev
+    fallback log rarely fires; the OTP was read from the simulator file and the full
+    send→sign-in→session flow passed. better-auth's withSpan telemetry leaves a
+    floating APIError rejection on failed sign-ins — filtered via vitest's root
+    onUnhandledError (APIError only). Production email needs Email Routing enabled
+    on the modelschemas.com zone (sender verification) — covered in 9.5.
 - [ ] **9.3 Human API-key management.** `/account` page for signed-in users:
       list, create (name + optional expiry), and revoke their API keys via
       the better-auth api-key plugin's session-authed endpoints; the key

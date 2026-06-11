@@ -17,6 +17,11 @@
     // Fast tier: models poll. Slow tier: full spec sync (05:00 UTC).
     "crons": ["*/15 * * * *", "0 5 * * *"],
   },
+  "send_email": [
+    {
+      "name": "EMAIL",
+    },
+  ],
   "kv_namespaces": [
     {
       "binding": "SCHEMA_CACHE",

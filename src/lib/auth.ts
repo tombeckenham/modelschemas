@@ -1,5 +1,5 @@
 import { betterAuth } from 'better-auth'
-import { bearer } from 'better-auth/plugins'
+import { bearer, emailOTP } from 'better-auth/plugins'
 import { apiKey } from '@better-auth/api-key'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { agentAuth } from '@better-auth/agent-auth'
@@ -32,6 +32,9 @@ export function publicCapabilityNames(): Array<string> {
 
 export interface CreateAuthOptions {
   secret?: string
+  /** Delivers sign-in OTPs (task 9.2). Injectable so tests capture codes;
+   * defaults to a structured console line. */
+  sendOtp?: (data: { email: string; otp: string }) => Promise<void>
   /** Absolute origin used for capability execution self-calls + JWT audiences. */
   baseUrl?: string
   extraPlugins?: Array<BetterAuthPlugin>
@@ -127,6 +130,20 @@ export function createAuth(db: Db, options?: CreateAuthOptions) {
       agentAuth(buildAgentAuthConfig(options)),
       apiKey(),
       bearer(),
+      // Human sign-in (task 9.2): email OTP, 6 digits, 5-minute expiry.
+      emailOTP({
+        otpLength: 6,
+        expiresIn: 300,
+        sendVerificationOTP: async ({ email, otp }) => {
+          if (options?.sendOtp) {
+            await options.sendOtp({ email, otp })
+            return
+          }
+          console.log(
+            JSON.stringify({ job: 'email', mode: 'dev-log', to: email, otp }),
+          )
+        },
+      }),
       ...(options?.extraPlugins ?? []),
     ],
   })
