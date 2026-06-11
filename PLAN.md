@@ -595,7 +595,7 @@ The production domain is **modelschemas.com**.
     floating APIError rejection on failed sign-ins — filtered via vitest's root
     onUnhandledError (APIError only). Production email needs Email Routing enabled
     on the modelschemas.com zone (sender verification) — covered in 9.5.
-- [ ] **9.3 Human API-key management.** `/account` page for signed-in users:
+- [x] **9.3 Human API-key management.** `/account` page for signed-in users:
       list, create (name + optional expiry), and revoke their API keys via
       the better-auth api-key plugin's session-authed endpoints; the key
       value is shown exactly once on creation, with copy-paste usage snippet
@@ -603,6 +603,10 @@ The production domain is **modelschemas.com**.
       req/h + subscriptions). _Accepts:_ live flow — sign in, create key,
       key authenticates `/v1/agents/me`, revoke, key 401s; worker tests for
       the session-scoped key lifecycle.
+  - Note: list endpoint returns {apiKeys: []}, not a bare array. Live flow verified
+    end to end (OTP sign-in → session-cookie key create → key 200s /v1/agents/me →
+    revoke → 401); worker tests cover the lifecycle plus cross-user isolation
+    (Bob can't see/revoke Alice's key).
 - [ ] **9.4 Frontend overhaul (use the /frontend-design:frontend-design
       skill).** Make the site look hot while staying agent-first: redesign
       the landing page (`/`) with a hero that pitches the service, a
