@@ -173,7 +173,7 @@ Rules:
 
 ## Phase 1 — Data model
 
-- [ ] **1.1 Core tables** in `src/db/schema.ts` (drizzle, sqlite dialect):
+- [x] **1.1 Core tables** in `src/db/schema.ts` (drizzle, sqlite dialect):
   - `providers` — id, displayName, specSourceUrl, modelsEndpoint, authEnvVar,
     lastPolledAt, lastSyncedAt, status.
   - `models` — id (slug), providerId, rawId, activity, displayName, contextWindow,
@@ -187,6 +187,9 @@ Rules:
     providerId, subjectId, summary, payload (json diff), createdAt. This is the
     public changelog feed.
     _Accepts:_ migration generated and applied locally; drizzle types compile.
+  - Note: migration drizzle/0001_sweet_zeigeist.sql; `activities`/`changeTypes` exported
+    as const arrays (drizzle text enums are type-level only). Worker tests cover insert +
+    relational query across all five tables and FK enforcement.
 - [ ] **1.2 Cache + delivery tables:**
   - `cache_meta` — key, fetchedAt, staleTime, lastError, refreshing flag.
   - `subscriptions` — id, agentId (auth user), url, secret, events (json array),

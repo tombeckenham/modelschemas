@@ -325,3 +325,162 @@ export const approvalRequestRelations = relations(
     }),
   }),
 )
+
+// ---------------------------------------------------------------------------
+// Core domain tables (PLAN.md task 1.1).
+// Conventions: ids are lowercase kebab/slug text; times are unix epoch seconds
+// (plain integers — the timestamp_ms columns above are better-auth-generated).
+// ---------------------------------------------------------------------------
+
+export const activities = [
+  'chat',
+  'image',
+  'video',
+  'audio',
+  'embeddings',
+  'moderation',
+] as const
+export type Activity = (typeof activities)[number]
+
+export const changeTypes = [
+  'model.added',
+  'model.removed',
+  'model.updated',
+  'schema.added',
+  'schema.updated',
+  'endpoint.added',
+  'endpoint.removed',
+] as const
+export type ChangeType = (typeof changeTypes)[number]
+
+export const providers = sqliteTable('providers', {
+  id: text('id').primaryKey(),
+  displayName: text('display_name').notNull(),
+  specSourceUrl: text('spec_source_url').notNull(),
+  modelsEndpoint: text('models_endpoint'),
+  authEnvVar: text('auth_env_var'),
+  lastPolledAt: integer('last_polled_at'),
+  lastSyncedAt: integer('last_synced_at'),
+  status: text('status', {
+    enum: ['active', 'degraded', 'disabled'],
+  })
+    .notNull()
+    .default('active'),
+})
+
+export const models = sqliteTable(
+  'models',
+  {
+    id: text('id').primaryKey(),
+    providerId: text('provider_id')
+      .notNull()
+      .references(() => providers.id, { onDelete: 'cascade' }),
+    rawId: text('raw_id').notNull(),
+    activity: text('activity', { enum: activities }),
+    displayName: text('display_name'),
+    contextWindow: integer('context_window'),
+    maxOutput: integer('max_output'),
+    modalities: text('modalities', { mode: 'json' }),
+    pricing: text('pricing', { mode: 'json' }),
+    capabilities: text('capabilities', { mode: 'json' }),
+    firstSeenAt: integer('first_seen_at').notNull(),
+    lastSeenAt: integer('last_seen_at').notNull(),
+    deprecatedAt: integer('deprecated_at'),
+  },
+  (table) => [
+    index('models_providerId_idx').on(table.providerId),
+    index('models_activity_idx').on(table.activity),
+  ],
+)
+
+export const endpoints = sqliteTable(
+  'endpoints',
+  {
+    id: text('id').primaryKey(),
+    providerId: text('provider_id')
+      .notNull()
+      .references(() => providers.id, { onDelete: 'cascade' }),
+    activity: text('activity', { enum: activities }).notNull(),
+    method: text('method').notNull(),
+    path: text('path').notNull(),
+    description: text('description'),
+  },
+  (table) => [index('endpoints_providerId_idx').on(table.providerId)],
+)
+
+export const schemaVersions = sqliteTable(
+  'schema_versions',
+  {
+    id: text('id').primaryKey(),
+    endpointId: text('endpoint_id')
+      .notNull()
+      .references(() => endpoints.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: ['input', 'output'] }).notNull(),
+    contentHash: text('content_hash').notNull(),
+    schema: text('schema').notNull(),
+    specRevision: text('spec_revision'),
+    createdAt: integer('created_at').notNull(),
+    supersededAt: integer('superseded_at'),
+  },
+  (table) => [
+    index('schema_versions_endpointId_kind_idx').on(
+      table.endpointId,
+      table.kind,
+    ),
+    index('schema_versions_contentHash_idx').on(table.contentHash),
+  ],
+)
+
+export const changes = sqliteTable(
+  'changes',
+  {
+    id: text('id').primaryKey(),
+    type: text('type', { enum: changeTypes }).notNull(),
+    providerId: text('provider_id')
+      .notNull()
+      .references(() => providers.id, { onDelete: 'cascade' }),
+    subjectId: text('subject_id').notNull(),
+    summary: text('summary').notNull(),
+    payload: text('payload', { mode: 'json' }),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => [
+    index('changes_createdAt_idx').on(table.createdAt),
+    index('changes_providerId_idx').on(table.providerId),
+  ],
+)
+
+export const providersRelations = relations(providers, ({ many }) => ({
+  models: many(models),
+  endpoints: many(endpoints),
+  changes: many(changes),
+}))
+
+export const modelsRelations = relations(models, ({ one }) => ({
+  provider: one(providers, {
+    fields: [models.providerId],
+    references: [providers.id],
+  }),
+}))
+
+export const endpointsRelations = relations(endpoints, ({ one, many }) => ({
+  provider: one(providers, {
+    fields: [endpoints.providerId],
+    references: [providers.id],
+  }),
+  schemaVersions: many(schemaVersions),
+}))
+
+export const schemaVersionsRelations = relations(schemaVersions, ({ one }) => ({
+  endpoint: one(endpoints, {
+    fields: [schemaVersions.endpointId],
+    references: [endpoints.id],
+  }),
+}))
+
+export const changesRelations = relations(changes, ({ one }) => ({
+  provider: one(providers, {
+    fields: [changes.providerId],
+    references: [providers.id],
+  }),
+}))
