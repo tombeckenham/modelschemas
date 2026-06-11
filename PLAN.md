@@ -416,9 +416,13 @@ discovery → register → request capability grants → execute with short-live
 
 ## Phase 6 — Push notifications
 
-- [ ] **6.1 Subscriptions CRUD.** `POST|GET|DELETE /v1/subscriptions` (authed):
+- [x] **6.1 Subscriptions CRUD.** `POST|GET|DELETE /v1/subscriptions` (authed):
       url + events filter (+ optional provider filter). Secret generated server-side,
       returned once. _Accepts:_ CRUD round-trip test.
+  - Note: gated on the manage*subscriptions capability; autonomous agents' virtual
+    identities are materialised as user rows on first write (FK integrity); 10
+    subscriptions/owner cap; whsec*-prefixed 32-byte secrets; list never echoes
+    secrets; ownership enforced on delete. Live curl round-trip verified.
 - [ ] **6.2 Webhook delivery.** On new `changes` rows, enqueue `webhook_deliveries`;
       deliver via `ctx.waitUntil` with HMAC-SHA256 signature header
       (`X-ModelSchemas-Signature`), JSON body `{ event, change, _links }`. Failures →

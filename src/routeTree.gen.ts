@@ -17,8 +17,10 @@ import { Route as V1ValidateRouteImport } from './routes/v1/validate'
 import { Route as V1StatusRouteImport } from './routes/v1/status'
 import { Route as V1ChangesRouteImport } from './routes/v1/changes'
 import { Route as DotwellKnownAgentConfigurationRouteImport } from './routes/[.]well-known/agent-configuration'
+import { Route as V1SubscriptionsIndexRouteImport } from './routes/v1/subscriptions/index'
 import { Route as V1ProvidersIndexRouteImport } from './routes/v1/providers/index'
 import { Route as V1ModelsIndexRouteImport } from './routes/v1/models/index'
+import { Route as V1SubscriptionsIdRouteImport } from './routes/v1/subscriptions/$id'
 import { Route as V1AgentsRegisterKeyRouteImport } from './routes/v1/agents/register-key'
 import { Route as V1AgentsMeRouteImport } from './routes/v1/agents/me'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -70,6 +72,11 @@ const DotwellKnownAgentConfigurationRoute =
     path: '/.well-known/agent-configuration',
     getParentRoute: () => rootRouteImport,
   } as any)
+const V1SubscriptionsIndexRoute = V1SubscriptionsIndexRouteImport.update({
+  id: '/v1/subscriptions/',
+  path: '/v1/subscriptions/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V1ProvidersIndexRoute = V1ProvidersIndexRouteImport.update({
   id: '/v1/providers/',
   path: '/v1/providers/',
@@ -78,6 +85,11 @@ const V1ProvidersIndexRoute = V1ProvidersIndexRouteImport.update({
 const V1ModelsIndexRoute = V1ModelsIndexRouteImport.update({
   id: '/v1/models/',
   path: '/v1/models/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V1SubscriptionsIdRoute = V1SubscriptionsIdRouteImport.update({
+  id: '/v1/subscriptions/$id',
+  path: '/v1/subscriptions/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const V1AgentsRegisterKeyRoute = V1AgentsRegisterKeyRouteImport.update({
@@ -141,8 +153,10 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/v1/agents/me': typeof V1AgentsMeRoute
   '/v1/agents/register-key': typeof V1AgentsRegisterKeyRoute
+  '/v1/subscriptions/$id': typeof V1SubscriptionsIdRoute
   '/v1/models/': typeof V1ModelsIndexRoute
   '/v1/providers/': typeof V1ProvidersIndexRoute
+  '/v1/subscriptions/': typeof V1SubscriptionsIndexRoute
   '/v1/admin/sync/$provider': typeof V1AdminSyncProviderRoute
   '/v1/models/$provider/$modelId': typeof V1ModelsProviderModelIdRoute
   '/v1/providers/$provider/models': typeof V1ProvidersProviderModelsRoute
@@ -162,8 +176,10 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/v1/agents/me': typeof V1AgentsMeRoute
   '/v1/agents/register-key': typeof V1AgentsRegisterKeyRoute
+  '/v1/subscriptions/$id': typeof V1SubscriptionsIdRoute
   '/v1/models': typeof V1ModelsIndexRoute
   '/v1/providers': typeof V1ProvidersIndexRoute
+  '/v1/subscriptions': typeof V1SubscriptionsIndexRoute
   '/v1/admin/sync/$provider': typeof V1AdminSyncProviderRoute
   '/v1/models/$provider/$modelId': typeof V1ModelsProviderModelIdRoute
   '/v1/providers/$provider/models': typeof V1ProvidersProviderModelsRoute
@@ -184,8 +200,10 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/v1/agents/me': typeof V1AgentsMeRoute
   '/v1/agents/register-key': typeof V1AgentsRegisterKeyRoute
+  '/v1/subscriptions/$id': typeof V1SubscriptionsIdRoute
   '/v1/models/': typeof V1ModelsIndexRoute
   '/v1/providers/': typeof V1ProvidersIndexRoute
+  '/v1/subscriptions/': typeof V1SubscriptionsIndexRoute
   '/v1/admin/sync/$provider': typeof V1AdminSyncProviderRoute
   '/v1/models/$provider/$modelId': typeof V1ModelsProviderModelIdRoute
   '/v1/providers/$provider/models': typeof V1ProvidersProviderModelsRoute
@@ -207,8 +225,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/v1/agents/me'
     | '/v1/agents/register-key'
+    | '/v1/subscriptions/$id'
     | '/v1/models/'
     | '/v1/providers/'
+    | '/v1/subscriptions/'
     | '/v1/admin/sync/$provider'
     | '/v1/models/$provider/$modelId'
     | '/v1/providers/$provider/models'
@@ -228,8 +248,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/v1/agents/me'
     | '/v1/agents/register-key'
+    | '/v1/subscriptions/$id'
     | '/v1/models'
     | '/v1/providers'
+    | '/v1/subscriptions'
     | '/v1/admin/sync/$provider'
     | '/v1/models/$provider/$modelId'
     | '/v1/providers/$provider/models'
@@ -249,8 +271,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/v1/agents/me'
     | '/v1/agents/register-key'
+    | '/v1/subscriptions/$id'
     | '/v1/models/'
     | '/v1/providers/'
+    | '/v1/subscriptions/'
     | '/v1/admin/sync/$provider'
     | '/v1/models/$provider/$modelId'
     | '/v1/providers/$provider/models'
@@ -271,8 +295,10 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   V1AgentsMeRoute: typeof V1AgentsMeRoute
   V1AgentsRegisterKeyRoute: typeof V1AgentsRegisterKeyRoute
+  V1SubscriptionsIdRoute: typeof V1SubscriptionsIdRoute
   V1ModelsIndexRoute: typeof V1ModelsIndexRoute
   V1ProvidersIndexRoute: typeof V1ProvidersIndexRoute
+  V1SubscriptionsIndexRoute: typeof V1SubscriptionsIndexRoute
   V1AdminSyncProviderRoute: typeof V1AdminSyncProviderRoute
   V1ModelsProviderModelIdRoute: typeof V1ModelsProviderModelIdRoute
   V1ProvidersProviderModelsRoute: typeof V1ProvidersProviderModelsRoute
@@ -339,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotwellKnownAgentConfigurationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v1/subscriptions/': {
+      id: '/v1/subscriptions/'
+      path: '/v1/subscriptions'
+      fullPath: '/v1/subscriptions/'
+      preLoaderRoute: typeof V1SubscriptionsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v1/providers/': {
       id: '/v1/providers/'
       path: '/v1/providers'
@@ -351,6 +384,13 @@ declare module '@tanstack/react-router' {
       path: '/v1/models'
       fullPath: '/v1/models/'
       preLoaderRoute: typeof V1ModelsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/subscriptions/$id': {
+      id: '/v1/subscriptions/$id'
+      path: '/v1/subscriptions/$id'
+      fullPath: '/v1/subscriptions/$id'
+      preLoaderRoute: typeof V1SubscriptionsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v1/agents/register-key': {
@@ -431,8 +471,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   V1AgentsMeRoute: V1AgentsMeRoute,
   V1AgentsRegisterKeyRoute: V1AgentsRegisterKeyRoute,
+  V1SubscriptionsIdRoute: V1SubscriptionsIdRoute,
   V1ModelsIndexRoute: V1ModelsIndexRoute,
   V1ProvidersIndexRoute: V1ProvidersIndexRoute,
+  V1SubscriptionsIndexRoute: V1SubscriptionsIndexRoute,
   V1AdminSyncProviderRoute: V1AdminSyncProviderRoute,
   V1ModelsProviderModelIdRoute: V1ModelsProviderModelIdRoute,
   V1ProvidersProviderModelsRoute: V1ProvidersProviderModelsRoute,
