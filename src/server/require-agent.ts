@@ -6,6 +6,7 @@
  */
 import { verifyAgentRequest } from '@better-auth/agent-auth'
 
+import { publicCapabilityNames } from '#/lib/auth.ts'
 import type { Auth } from '#/lib/auth.ts'
 import { jsonError } from '#/server/admin.ts'
 
@@ -18,12 +19,13 @@ export interface AgentPrincipal {
   capabilities: Array<string>
 }
 
-/** Authenticated via the api-key fallback (task 5.3) — full standard access. */
+/** Authenticated via the api-key fallback (task 5.3) — public capabilities only. */
 export interface ApiKeyPrincipal {
   kind: 'api-key'
   keyId: string
   name: string | null
   userId: string
+  capabilities: Array<string>
 }
 
 export type Principal = AgentPrincipal | ApiKeyPrincipal
@@ -104,6 +106,7 @@ async function verifyApiKeyPrincipal(
     keyId: owner.id,
     name: owner.name ?? null,
     userId,
+    capabilities: publicCapabilityNames(),
   }
 }
 
@@ -121,15 +124,32 @@ export async function requireAgent(
   const apiKey = bearerApiKey(request)
   if (apiKey) {
     const principal = await verifyApiKeyPrincipal(auth, apiKey)
-    if (principal) return { ok: true, principal }
-    return {
-      ok: false,
-      response: jsonError(
-        401,
-        'invalid_api_key',
-        'API key is invalid or disabled. Register a new one at POST /v1/agents/register-key.',
-      ),
+    if (!principal) {
+      return {
+        ok: false,
+        response: jsonError(
+          401,
+          'invalid_api_key',
+          'API key is invalid or disabled. Register a new one at POST /v1/agents/register-key.',
+        ),
+      }
     }
+    // API keys satisfy only public (approval-free) capabilities — privileged
+    // capabilities require the agent-auth grant flow.
+    if (
+      options?.capability &&
+      !principal.capabilities.includes(options.capability)
+    ) {
+      return {
+        ok: false,
+        response: jsonError(
+          403,
+          'capability_not_granted',
+          `API keys cannot satisfy the '${options.capability}' capability. Use the agent-auth protocol (see /.well-known/agent-configuration).`,
+        ),
+      }
+    }
+    return { ok: true, principal }
   }
 
   const session = await fetchAgentSession(auth, request)

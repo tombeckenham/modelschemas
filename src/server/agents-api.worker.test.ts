@@ -36,13 +36,28 @@ describe('registerKeyAgent + API-key requireAgent', () => {
       expect(viaBearer.principal.userId).toBe(outcome.result.userId)
     }
 
-    // X-Api-Key works too, and API keys pass capability checks.
+    // X-Api-Key works too, and keys satisfy public capabilities.
     const viaHeader = await requireAgent(
       auth,
       keyedRequest({ 'x-api-key': outcome.result.key }),
       { capability: 'manage_subscriptions' },
     )
     expect(viaHeader.ok).toBe(true)
+
+    // ...but never privileged/unknown capabilities (no silent bypass).
+    const privileged = await requireAgent(
+      auth,
+      keyedRequest({ 'x-api-key': outcome.result.key }),
+      { capability: 'syncProvider' },
+    )
+    expect(privileged.ok).toBe(false)
+    if (!privileged.ok) {
+      expect(privileged.response.status).toBe(403)
+      const body = (await privileged.response.json()) as {
+        error: { code: string }
+      }
+      expect(body.error.code).toBe('capability_not_granted')
+    }
   })
 
   it('rejects invalid keys with a 401', async () => {

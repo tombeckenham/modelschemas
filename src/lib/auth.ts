@@ -3,7 +3,7 @@ import { bearer } from 'better-auth/plugins'
 import { apiKey } from '@better-auth/api-key'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { agentAuth } from '@better-auth/agent-auth'
-import { createFromOpenAPI } from '@better-auth/agent-auth/openapi'
+import { createFromOpenAPI, fromOpenAPI } from '@better-auth/agent-auth/openapi'
 import type { BetterAuthPlugin } from 'better-auth'
 import type { Capability } from '@better-auth/agent-auth'
 
@@ -13,6 +13,22 @@ import { openApiDocument } from '#/server/openapi.ts'
 
 /** Capabilities never exposed to agents (admin surface). */
 const EXCLUDED_CAPABILITIES = new Set(['syncProvider'])
+
+/**
+ * The public (approval-free) capability set. This is also the EXACT set an
+ * API-key principal may satisfy: API keys are the low-friction fallback for
+ * public operations and must never satisfy a privileged capability — if a
+ * capability with approvalStrength !== 'none' is ever added, keep it out of
+ * this list (see requireAgent's capability check).
+ */
+export function publicCapabilityNames(): Array<string> {
+  const derived = fromOpenAPI(
+    openApiDocument as unknown as Parameters<typeof fromOpenAPI>[0],
+  )
+    .map((capability) => capability.name)
+    .filter((name) => !EXCLUDED_CAPABILITIES.has(name))
+  return [...derived, 'manage_subscriptions']
+}
 
 export interface CreateAuthOptions {
   secret?: string
