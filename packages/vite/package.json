@@ -8,9 +8,27 @@
     ".": "./src/index.ts"
   },
   "files": [
-    "src"
+    "src",
+    "!src/**/*.test.ts"
   ],
   "license": "MIT",
+  "homepage": "https://modelschemas.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modelschemas/modelschemas.git",
+    "directory": "packages/vite"
+  },
+  "bugs": "https://github.com/modelschemas/modelschemas/issues",
+  "keywords": [
+    "vite-plugin",
+    "ai",
+    "json-schema",
+    "codegen",
+    "schemas"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelschemas/codegen": "workspace:*"
   },

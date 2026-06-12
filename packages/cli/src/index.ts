@@ -56,7 +56,7 @@ Commands:
                                                  content hash (reports provenance)
 
 Options:
-  --base-url <url>   service origin (default: $MODELSCHEMAS_URL or http://localhost:3100)
+  --base-url <url>   service origin (default: $MODELSCHEMAS_URL or https://modelschemas.com)
   --json             force JSON output (default when piped)
   -h, --help         this help
 `
@@ -429,7 +429,7 @@ async function main(): Promise<void> {
       values['base-url'] ??
       process.env.MODELSCHEMAS_URL ??
       stored?.baseUrl ??
-      'http://localhost:3100',
+      'https://modelschemas.com',
     json: values.json ?? !process.stdout.isTTY,
     values,
     positionals: rest,

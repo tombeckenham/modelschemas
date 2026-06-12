@@ -8,9 +8,27 @@
     ".": "./src/index.ts"
   },
   "files": [
-    "src"
+    "src",
+    "!src/**/*.test.ts"
   ],
   "license": "MIT",
+  "homepage": "https://modelschemas.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modelschemas/modelschemas.git",
+    "directory": "packages/codegen"
+  },
+  "bugs": "https://github.com/modelschemas/modelschemas/issues",
+  "keywords": [
+    "ai",
+    "json-schema",
+    "codegen",
+    "typescript",
+    "schemas"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
     "prettier": ">=3"
   },

@@ -8,12 +8,29 @@
     "modelschemas": "./src/index.ts"
   },
   "files": [
-    "src"
+    "src",
+    "!src/**/*.test.ts"
   ],
   "dependencies": {
     "@modelschemas/client": "workspace:*",
     "@modelschemas/codegen": "workspace:*",
     "jose": "^6.2.3"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "homepage": "https://modelschemas.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/modelschemas/modelschemas.git",
+    "directory": "packages/cli"
+  },
+  "bugs": "https://github.com/modelschemas/modelschemas/issues",
+  "keywords": [
+    "ai",
+    "json-schema",
+    "openapi",
+    "llm",
+    "model",
+    "schemas",
+    "cli"
+  ]
 }
