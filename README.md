@@ -123,6 +123,20 @@ Secrets live in `.env.local` (see CLAUDE.md). `ADMIN_KEY` gates
 Cron triggers (`*/15 * * * *` models poll + webhook drain, `0 5 * * *` spec
 sync) start automatically on deploy.
 
+### Continuous deploys (Workers Builds)
+
+Pushes to `main` deploy via Cloudflare Workers Builds (dashboard → Workers
+& Pages → `modelschemas` → Settings → Build → connect the GitHub repo).
+Settings:
+
+- **Build command:** `bun run build`
+- **Deploy command:**
+  `bunx wrangler d1 migrations apply DB --remote && bunx wrangler deploy -c dist/server/wrangler.json`
+  — the build **emits** the real worker config at `dist/server/wrangler.json`;
+  deploying the repo-root `wrangler.jsonc` directly will not work.
+
+`bun run deploy` remains the manual/emergency path.
+
 ## Runbook: a provider sync is failing
 
 1. `GET /v1/status` — the failing provider shows `status: "degraded"` and a

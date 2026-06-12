@@ -838,7 +838,25 @@ Design settled with Tom (don't relitigate):
     by staling the lockfile entry rather than a D1 write — same code path,
     no SWR-staleness flake. CLI pull/update smoked end-to-end. Docs: README
     quickstart; /docs + llms.txt already carry the 12.2 section.
-    **Deploy BLOCKED on Tom** — production deploy needs explicit approval
-    (`bun run deploy`, then verify
-    `curl -sI 'https://modelschemas.com/v1/schemas/anthropic/chat/v1%2Fmessages?format=types'`
-    → 200 text/typescript with `<hash>-types-v1-exact` ETag).
+    **Deployed + verified 2026-06-12** (Tom approved): production curl →
+    200 `text/typescript` with `<hash>-types-v1-exact` ETag (and the
+    `optional=undefined` variant keyed separately); full
+    `bun scripts/pull-roundtrip.ts https://modelschemas.com` green —
+    pull → tsc-clean → 304 no-op → staled-entry rewrite, all against prod.
+- [x] ~BLOCKED on Tom~ **12.7 Deploy on push via Workers Builds.** Tom
+      chose Cloudflare Workers Builds over a CI deploy job (no tokens in
+      GitHub). Connecting the repo needs interactive GitHub auth in the
+      Cloudflare dashboard, so the setup is Tom's: dashboard → Workers &
+      Pages → `modelschemas` → Settings → Build → Connect → GitHub repo
+      `tombeckenham/modelschemas`, production branch `main`, then:
+  - Build command: `bun run build` (the build image auto-runs
+    `bun install` from bun.lock)
+  - Deploy command:
+    `bunx wrangler d1 migrations apply DB --remote && bunx wrangler deploy -c dist/server/wrangler.json`
+    (migrations are idempotent; the emitted config under dist/server is the
+    real worker config — NOT the repo-root wrangler.jsonc)
+  - Root directory: `/`; leave non-production branch builds enabled if PR
+    preview versions are wanted (wrangler versions upload).
+    Once connected, manual `bun run deploy` becomes the emergency path
+    only. _Accepts:_ a push to main produces a dashboard build that
+    deploys; /v1/status on prod reflects the new version.
