@@ -1,0 +1,344 @@
+@import 'tailwindcss';
+
+/* ── print-shop contact sheet ─────────────────────────────────────────────
+   Warm paper, charcoal ink, registration-red crop marks. Sizes printed to
+   scale like a plate proof.                                               */
+
+:root {
+  --paper: #f4efe6;
+  --paper-2: #ece5d8;
+  --ink: #1f1b16;
+  --ink-soft: #5f574b;
+  --rule: #d8cfbf;
+  --red: #c5301c;
+  --serif: 'Fraunces', georgia, serif;
+  --mono: 'Spline Sans Mono', ui-monospace, monospace;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      ellipse 900px 420px at 85% -5%,
+      rgba(197, 48, 28, 0.05),
+      transparent 65%
+    ),
+    var(--paper);
+}
+
+code {
+  font-family: var(--mono);
+  background: var(--paper-2);
+  padding: 0.05rem 0.35rem;
+  margin: 0 0.15rem;
+}
+
+.sheet {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3rem 2rem 6rem;
+}
+
+/* head */
+.sheet-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+  border-bottom: 3px double var(--ink);
+  padding-bottom: 1.75rem;
+  margin-bottom: 0;
+  animation: settle 0.5s ease both;
+}
+.kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.display {
+  margin: 0.3rem 0 0.6rem;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+.display em {
+  font-style: italic;
+  font-weight: 380;
+  color: var(--red);
+}
+.standfirst {
+  margin: 0;
+  max-width: 62ch;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+.search {
+  flex-shrink: 0;
+  width: 240px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--ink);
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  padding: 0.4rem 0.1rem;
+  color: var(--ink);
+  outline: none;
+}
+.search::placeholder {
+  color: var(--ink-soft);
+}
+.search:focus {
+  border-bottom-color: var(--red);
+}
+
+/* layout */
+.sheet-grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  min-height: 70vh;
+}
+@media (max-width: 900px) {
+  .sheet-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* model index */
+.index {
+  border-right: 1px solid var(--rule);
+  padding: 1.5rem 1.25rem 1.5rem 0;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+}
+.index-provider {
+  margin: 1.25rem 0 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.index-provider:first-of-type {
+  margin-top: 0;
+}
+.index-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.6rem;
+  background: none;
+  border: none;
+  border-bottom: 1px dotted var(--rule);
+  padding: 0.35rem 0.2rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+.index-row:hover {
+  background: var(--paper-2);
+}
+.index-row-on {
+  background: var(--ink);
+  color: var(--paper);
+}
+.index-row-on .index-count {
+  color: var(--paper-2);
+}
+.index-name {
+  word-break: break-all;
+}
+.index-count {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+}
+.index-empty {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+/* detail */
+.detail {
+  padding: 1.75rem 0 0 2rem;
+  animation: settle 0.4s ease both;
+}
+.detail-provider {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.detail-title {
+  margin: 0.15rem 0 0.4rem;
+  font-family: var(--serif);
+  font-weight: 550;
+  font-size: 1.9rem;
+  word-break: break-all;
+}
+.detail-models {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: baseline;
+}
+.detail-none {
+  margin-top: 2rem;
+  max-width: 50ch;
+  color: var(--ink-soft);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* plates */
+.plate {
+  margin-top: 2rem;
+}
+.plate-label {
+  margin: 0 0 0.9rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.4rem;
+}
+.size-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+}
+.size-card {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.size-stage {
+  display: grid;
+  place-items: center;
+  background: var(--paper-2);
+  background-image:
+    linear-gradient(rgba(31, 27, 22, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 27, 22, 0.05) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.size-frame {
+  position: relative;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(31, 27, 22, 0.18);
+  display: grid;
+  place-items: center;
+}
+.size-card-default .size-frame {
+  border-color: var(--red);
+}
+.size-flag {
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.size-card figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+.size-name {
+  font-size: 0.78rem;
+}
+.size-dims {
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+
+/* bounds table */
+.bounds-table {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.bounds-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--ink-soft);
+  padding: 0.45rem 1.5rem 0.45rem 0;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+}
+.bounds-table td {
+  padding: 0.45rem 2rem 0.45rem 0;
+  border-bottom: 1px dotted var(--rule);
+}
+.bounds-default {
+  color: var(--red);
+  font-size: 0.78rem;
+}
+
+/* resolutions */
+.res-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.res-chip {
+  border: 1px solid var(--ink);
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+/* empty state */
+.empty {
+  margin: 4rem auto;
+  max-width: 60ch;
+  text-align: center;
+}
+.empty-title {
+  font-family: var(--serif);
+  font-weight: 550;
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+.empty p {
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+.empty-code {
+  text-align: left;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 1rem 1.25rem;
+  font-size: 0.78rem;
+  overflow-x: auto;
+}
+
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
