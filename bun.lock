@@ -78,6 +78,7 @@
       },
       "dependencies": {
         "@modelschemas/client": "workspace:*",
+        "@modelschemas/codegen": "workspace:*",
         "jose": "^6.2.3",
       },
     },

@@ -16,6 +16,9 @@ import {
   validatePayload,
 } from '@modelschemas/client'
 
+import { pull, readManifest } from '@modelschemas/codegen'
+import type { OptionalStyle, PullConfig } from '@modelschemas/codegen'
+
 import { mintAgentJwt, registerAgent, waitForActivation } from './agent-auth.ts'
 import {
   credentialsPath,
@@ -37,6 +40,11 @@ Commands:
   validate <provider/endpointId> <file> [--kind input|output]
   changes [--since <epoch>] [--provider p] [--type t]
   subscribe <url> [--events e1,e2] [--provider p]
+  pull <selection...> [--out dir] [--no-types] [--optional exact|undefined]
+                                                 generate schema/type modules
+                                                 (e.g. anthropic/v1/messages#request, gemini/*)
+  update [--out dir]                             refresh pulled modules (selection
+                                                 comes from the manifest)
 
 Options:
   --base-url <url>   service origin (default: $MODELSCHEMAS_URL or http://localhost:3100)
@@ -269,6 +277,86 @@ async function cmdSubscribe(ctx: Ctx): Promise<void> {
   output(ctx, await response.json())
 }
 
+export interface PullFlags {
+  outDir: string
+  types: boolean
+  optionalStyle: OptionalStyle | undefined
+}
+
+/** Shared flag parsing for `pull`/`update` — exported for tests. */
+export function parsePullFlags(
+  values: Record<string, string | boolean | undefined>,
+): PullFlags {
+  const optional = values.optional
+  if (
+    optional !== undefined &&
+    optional !== 'exact' &&
+    optional !== 'undefined'
+  ) {
+    fail(`invalid --optional '${String(optional)}' — use exact or undefined`)
+  }
+  return {
+    outDir: typeof values.out === 'string' ? values.out : 'src/modelschemas',
+    types: values['no-types'] !== true,
+    optionalStyle: optional,
+  }
+}
+
+function pullApiKey(): string | undefined {
+  if (process.env.MODELSCHEMAS_API_KEY !== undefined) {
+    return process.env.MODELSCHEMAS_API_KEY
+  }
+  const credentials = loadCredentials()
+  return credentials?.type === 'api-key' ? credentials.apiKey : undefined
+}
+
+async function runPull(ctx: Ctx, config: PullConfig): Promise<void> {
+  const summary = await pull(config)
+  output(ctx, summary)
+  if (summary.failed.length > 0) process.exit(1)
+}
+
+async function cmdPull(ctx: Ctx): Promise<void> {
+  if (ctx.positionals.length === 0) {
+    fail(
+      'usage: pull <selection...> [--out dir] [--no-types] [--optional exact|undefined]',
+    )
+  }
+  const flags = parsePullFlags(ctx.values)
+  await runPull(ctx, {
+    baseUrl: ctx.baseUrl,
+    apiKey: pullApiKey(),
+    outDir: flags.outDir,
+    selections: ctx.positionals,
+    types: flags.types,
+    optionalStyle: flags.optionalStyle,
+    log: (message) => console.error(message),
+  })
+}
+
+async function cmdUpdate(ctx: Ctx): Promise<void> {
+  const flags = parsePullFlags(ctx.values)
+  const manifest = await readManifest(flags.outDir)
+  if (manifest === null) {
+    fail(
+      `no ${flags.outDir}/.manifest.json — run 'modelschemas pull <selection...>' first`,
+    )
+  }
+  await runPull(ctx, {
+    // Explicit --base-url wins; otherwise refresh from where we pulled.
+    baseUrl:
+      typeof ctx.values['base-url'] === 'string'
+        ? ctx.baseUrl
+        : manifest.baseUrl,
+    apiKey: pullApiKey(),
+    outDir: flags.outDir,
+    selections: manifest.selections,
+    types: manifest.types,
+    optionalStyle: manifest.optionalStyle,
+    log: (message) => console.error(message),
+  })
+}
+
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
     args: process.argv.slice(2),
@@ -288,6 +376,9 @@ async function main(): Promise<void> {
       since: { type: 'string' },
       type: { type: 'string' },
       events: { type: 'string' },
+      out: { type: 'string' },
+      'no-types': { type: 'boolean' },
+      optional: { type: 'string' },
     },
   })
 
@@ -324,17 +415,24 @@ async function main(): Promise<void> {
       return cmdChanges(ctx)
     case 'subscribe':
       return cmdSubscribe(ctx)
+    case 'pull':
+      return cmdPull(ctx)
+    case 'update':
+      return cmdUpdate(ctx)
     default:
       fail(`unknown command '${command}'.\n${HELP}`)
   }
 }
 
-main().catch((error: unknown) => {
-  console.error(
-    `error: ${error instanceof Error ? error.message : String(error)}`,
-  )
-  process.exit(1)
-})
+// Only run when executed as the bin — not when imported (e.g. by tests).
+if (import.meta.main) {
+  main().catch((error: unknown) => {
+    console.error(
+      `error: ${error instanceof Error ? error.message : String(error)}`,
+    )
+    process.exit(1)
+  })
+}
 
 // Referenced for help/tests; credentialsPath is part of the public surface.
 export { credentialsPath, HELP }

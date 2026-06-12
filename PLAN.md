@@ -821,7 +821,7 @@ Design settled with Tom (don't relitigate):
       tests drive the plugin hooks both modes; a fixture project under the
       test proves generated modules are import-clean (no side effects, no
       barrel).
-- [ ] **12.5 CLI `pull`/`update`.** `modelschemas pull` taking selections
+- [x] **12.5 CLI `pull`/`update`.** `modelschemas pull` taking selections
       plus `--out` and `--no-types` flags, and `modelschemas update --out`
       (selection read from the manifest) on the codegen core; help text
       updated. _Accepts:_ unit tests for arg parsing; roundtrip exercised
